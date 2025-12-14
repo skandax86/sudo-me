@@ -1,7 +1,4 @@
-# sudo-me
-A data-driven blueprint for the perfect daily routine
-
-**Create a complete 90-day transformation plan for me.
+dvva.v**Create a complete 90-day transformation plan for me.
 The plan must be detailed, precise, reliable, structured, and easy to understand.
 It should cover every aspect of becoming a 10/10 version of myself: looks, body, face, eyes, smile, grooming, posture, confidence, skills, finance, wealth, education, mental health, discipline, lifestyle, and career.
 This plan will be used as the base blueprint for a self-development system (app + website).
@@ -129,10 +126,10 @@ Create a **full 90-day plan** with:
 
 # ⭐ **FINAL PROMPT (Copy-Paste Ready)**
 
-**"Create a complete, detailed, and structured 90-day transformation plan for me based on the following inputs:
+**“Create a complete, detailed, and structured 90-day transformation plan for me based on the following inputs:
 [PASTE EVERYTHING ABOVE — Background, Budget, Goals, Habits, Skills, Fitness Targets, Investment Plan]
 The plan should be broken into phases, include daily routines, weekly goals, monthly milestones, fitness + looks enhancement, financial planning, career acceleration, discipline building, and a clear rating system to measure progress.
-Make the plan practical, realistic, results-focused, and easy to use for a self-development app."**
+Make the plan practical, realistic, results-focused, and easy to use for a self-development app.”**
 
 ---
 
@@ -146,7 +143,7 @@ This plan is structured into three phases, designed to build habits, increase in
 | --- | --- | --- | --- |
 | **Phase 1: Foundation** | Days 1–30 | **Discipline & Consistency** | Solidify 6 AM wake-up, cold showers, gym attendance (4x), daily LeetCode/Study block, and strict budget adherence. |
 | **Phase 2: Intensity** | Days 31–60 | **Skill Stacking & Acceleration** | Achieve **AWS Certification** (or 50% completion), complete 100 LeetCode problems, book first trip, and demonstrate visible physique change. |
-| **Phase 3: Mastery** | Days 61–90 | **Execution & Polishing** | Complete **Databricks Certification**, complete 200–300 LeetCode problems, finalize job switch assets (resume/portfolio), and establish the ₹5L asset base. |
+| **Phase 3: Mastery** | Days 61–90 | **Execution & Polishing** | Complete **Databricks Certification**, complete 200–300 LeetCode problems, finalize job switch assets (resume/portfolio), and establish the $₹5$L asset base. |
 
 ## 2. Daily Routine
 
@@ -255,11 +252,11 @@ This plan is structured into three phases, designed to build habits, increase in
 
 | **Category** | **Budget (₹)** | **Compliance Score (Monthly)** |
 | --- | --- | --- |
-| Essentials | ₹30,000 | Must be < 100% |
-| Wants | ₹10,000 | Must be < 100% |
-| Investments | **₹20,000** | Must be 100% |
-| Savings | **₹20,000** | Must be 100% |
-| Goals | **₹15,000** | Must be 100% |
+| Essentials | ₹30,000 | Must be $< 100\%$ |
+| Wants | ₹10,000 | Must be $< 100\%$ |
+| Investments | **₹20,000** | Must be $100\%$ |
+| Savings | **₹20,000** | Must be $100\%$ |
+| Goals | **₹15,000** | Must be $100\%$ |
 
 ### 📈 Investment Breakdown (₹20,000/Month)
 
@@ -273,9 +270,9 @@ This plan is structured into three phases, designed to build habits, increase in
 
 1. **Emergency Fund Strategy:** Dedicate **₹6,000/month** (Low Risk SIP) towards the Emergency Fund.
     - **90-Day Goal:** ₹18,000 in dedicated liquid/safe fund.
-2. **₹5L Asset Creation Plan (90-day Phase):**
+2. **$₹5$L Asset Creation Plan (90-day Phase):**
     - **Monthly Savings + Investments:** ₹40,000 (Savings + Investments)
-    - **90-Day Accumulation:** 3 × ₹40,000 = ₹1,20,000 (Progress towards the ₹5L goal).
+    - **90-Day Accumulation:** $3 \times ₹40,000 = ₹1,20,000$ (Progress towards the $₹5$L goal).
     - *Note: This is an ongoing mid-term goal, the 90-day plan is the foundational accumulation period.*
 
 ## 7. Metrics & Accountability
@@ -285,7 +282,7 @@ This plan is structured into three phases, designed to build habits, increase in
 - **Discipline:** Woke up at 6 AM (Y/N), Cold Shower (Y/N), No Phone First Hour (Y/N), Plan Tomorrow Done (Y/N).
 - **Health:** Water (Gallon Y/N), Meditation (Y/N), Gym/Workout (Y/N).
 - **Learning:** LeetCode (Problems solved), Cert Prep (Hours).
-- **Finance:** Budget Compliance (Expense Tracker Y/N).
+- **Finance:** Budget Compliance (Expense Tracker $Y/N$).
 
 ### 💯 Weekly Scorecard (Sunday Review)
 
@@ -296,15 +293,15 @@ This plan is structured into three phases, designed to build habits, increase in
 | **Skills** | 15 LC, 140 Pages |  | LC Solved, Pages Read |
 | **Finance** | ₹55,000 Allocation |  | ₹Allocated |
 | **Career** | 5 Company Research, 1 Resume Section |  | Y/N |
-| **Total Weekly Score** | Σ Scores |  |  |
+| **Total Weekly Score** | $\sum \text{Scores}$ |  |  |
 
 ### 🎯 Monthly Milestone Targets
 
 | **Month** | **Fitness/Looks** | **Career/Skills** | **Finance/Wealth** | **Travel** |
 | --- | --- | --- | --- | --- |
-| **Month 1** | Consistent Gym/Run schedule. Visible muscle tone. Strict diet adherence. | Complete 60 Easy LC. Complete AWS Domain 1-2. | Establish strict budget. ₹40,000 savings/invested. | Book 1 domestic trip. |
-| **Month 2** | Increase lift weights by 10%. Running 5km challenge. Posture significantly improved. | **Complete AWS Certification.** Complete 80 Medium LC. Start Databricks. | ₹80,000 savings/invested. Investment portfolio review. | Book 2nd domestic trip. |
-| **Month 3** | Achieve Calisthenics goal (L-sit). 7-8 hrs sleep consistently. | **Complete Databricks Cert.** Complete 80 Mixed LC/System Design. **Ready to Apply.** | **₹1,20,000 towards ₹5L asset.** Finalize all goal funds. | Book 3rd domestic + 1 international trip. |
+| **Month 1** | Consistent Gym/Run schedule. Visible muscle tone. Strict diet adherence. | Complete 60 Easy LC. Complete AWS Domain 1-2. | Establish strict budget. $₹40,000$ savings/invested. | Book 1 domestic trip. |
+| **Month 2** | Increase lift weights by 10%. Running 5km challenge. Posture significantly improved. | **Complete AWS Certification.** Complete 80 Medium LC. Start Databricks. | $₹80,000$ savings/invested. Investment portfolio review. | Book 2nd domestic trip. |
+| **Month 3** | Achieve Calisthenics goal (L-sit). 7-8 hrs sleep consistently. | **Complete Databricks Cert.** Complete 80 Mixed LC/System Design. **Ready to Apply.** | **$₹1,20,000$ towards $₹5$L asset.** Finalize all goal funds. | Book 3rd domestic + 1 international trip. |
 
 ---
 
@@ -359,7 +356,7 @@ This application must be designed for deployment on a **free-tier cloud platform
 
 ### III. Core Modules (Use Cases)
 
-1. **Finance Module:** Budget vs. Actual tracking, Investment portfolio tracking (SIP, ETFs, Stocks), Emergency Fund progress, ₹5L asset goal visualization.
+1. **Finance Module:** Budget vs. Actual tracking, Investment portfolio tracking (SIP, ETFs, Stocks), Emergency Fund progress, $₹5$L asset goal visualization.
 2. **Habit & Goal Tracking:** Daily check-ins (6 AM wake, Cold Shower, Meditation), LeetCode/Study hours, Discipline/Impulse Control tracking (Y/N).
 3. **Workout & Fitness Log:** Logging 4x Gym, 2x Calisthenics/Running, Swimming lesson progress. Tracking water intake (1 Gallon).
 4. **Grooming & Posture Routine:** Daily checks (Y/N), logging skin/hair care compliance.
@@ -372,6 +369,16 @@ This application must be designed for deployment on a **free-tier cloud platform
 - **Cost Control:** Strict use of free-tier or minimal-cost services for all components.
 
 **Please generate the full, detailed `README.md` based on this specification, using appropriate Markdown headings and tables.**"
+
+[Image of microservices architecture diagram](https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcRq38r7GIqs5VvyQrizILRTq8feCiVIBwHJCgYH6jfpwFw0TIGFyOfCkbbl5FKFaaC-g41ZbYXLy2oxMzoHdx3fSYrU8QX0YbBBGWFYTe30UqSaMKI)
+
+Shutterstock
+
+I have already generated a comprehensive, detailed architectural prompt in the `README.md` format within the previous response.
+
+Since you've specifically asked for an **extensive, technical prompt to build such an application**, I will refine and expand the previous specifications into a **System Design Document (SDD) Prompt** focusing on the technical requirements, data schemas, and implementation details necessary for a development team.
+
+This prompt is designed to be copy-pasted into a powerful AI agent (like the one described, including LLM and BAML tools) or provided directly to a developer team.
 
 ---
 
@@ -519,6 +526,10 @@ The system must leverage advanced tooling for intelligent features.
 1. **Security Rules:** Implement strict Firebase Security Rules to ensure users can only read/write their own data (User UID pathing).
 2. **Code Quality:** Utilize TypeScript strictly across the entire project. Enforce TSLint/ESLint rules for code consistency.
 3. **Deployment:** Implement CI/CD (GitHub Actions/Vercel/Firebase Tools) for automated deployment on code commit."
+
+This is the **Master Prompt**. It is designed to act as a **Product Requirements Document (PRD)** and **Technical Design Document (TDD)** combined.
+
+You can copy and paste this entire block into a powerful LLM (like GPT-4, Claude 3.5 Sonnet, or Gemini Advanced) to generate the exact code structure, file trees, and logic needed by a development team.
 
 ---
 
@@ -706,6 +717,201 @@ Based on the extensive specification above, please generate:
 2. **Zod Schemas (`lib/validations.ts`):** The exact Zod code to validate the User Profile, Daily Log, and Transaction inputs based on the limits defined (e.g., max ₹30k).
 3. **Custom Hook (`hooks/useDisciplineScore.ts`):** The logic to calculate the 0-100% daily score based on the weighted inputs.
 4. **Firestore Security Rules:** The code to ensure data privacy (users can only read/write their own data).
-5. **Mermaid.js Diagram:** A sequence diagram showing the flow: User Logs Data -> Firestore Write -> Cloud Function Trigger -> LLM Analysis -> Notification Update.
+5. **Mermaid.js Diagram:**
 
-**Begin by generating the Project File Structure and the Mermaid Diagram.**
+[Image of microservices architecture diagram](https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcTgzf3lcaAv97gSdTCeBIzYdi7gOCgaNZY6D4mWeXuUuQnql_DMC8EHLpMmSW_AL4NZq-65s5BVj7c0XseRbwDn9gHCikVzhPWEm5VzQThNvHV3mN0)
+
+Shutterstock
+
+A sequence diagram showing the flow: User Logs Data -> Firestore Write -> Cloud Function Trigger -> LLM Analysis -> Notification Update.
+
+**Begin by generating the Project File Structure and the Mermaid Diagram.**# 🚀 The 90-Day Transformation Blueprint
+
+## 1. High-Level Structure
+
+| **Phase** | **Duration** | **Focus Area** | **Key Outcome Goal** |
+|-----------|--------------|----------------|---------------------|
+| **Phase 1: Foundation** | Days 1–30 | **Discipline & Consistency** | Solidify 6 AM wake-up, cold showers, gym attendance (4x), daily LeetCode/Study block, and strict budget adherence |
+| **Phase 2: Intensity** | Days 31–60 | **Skill Stacking & Acceleration** | Achieve **AWS Certification** (or 50% completion), complete 100 LeetCode problems, book first trip, and demonstrate visible physique change |
+| **Phase 3: Mastery** | Days 61–90 | **Execution & Polishing** | Complete **Databricks Certification**, complete 200–300 LeetCode problems, finalize job switch assets (resume/portfolio), and establish the ₹5L asset base |
+
+## 2. Daily Routine
+
+### 🌞 Morning Routine (6:00 AM – 8:00 AM)
+- **6:00 AM:** Alarm & Wake-up
+- **6:00 AM – 6:10 AM:** Hydrate (1 glass of water), Cold Shower
+- **6:10 AM – 6:20 AM:** **Meditation** (10 minutes)
+- **6:20 AM – 6:40 AM:** **Grooming Routine**
+- **6:40 AM – 7:30 AM:** **Learning Block 1** (Deep work: DSA/Cloud Cert Prep). *No phone first hour ends at 7:00 AM*
+- **7:30 AM – 8:00 AM:** Cook & Eat Fresh Breakfast
+
+### 💻 Workday Structure (9:00 AM – 6:00 PM)
+- **During Work:** Maintain sharp **Posture** (use a desk timer every 60 mins to check), and drink water consistently
+- **Lunch (1:00 PM):** Intermittent Fasting (IF) can be done by skipping breakfast (eating first meal at 1:00 PM) once or twice per week
+
+### 💪 Workout Plan (6:00 PM – 8:00 PM)
+
+| **Day** | **Primary Focus** | **Secondary Focus** | **Goal (Phase 3)** |
+|---------|-------------------|---------------------|-------------------|
+| Monday | Gym (Upper Body) | Running (2–3 km) | Increase Gym weight by 10% |
+| Tuesday | **Rest/Active Recovery** | Calisthenics (Basic holds/push-ups) | Running 5km sub 30 mins |
+| Wednesday | Gym (Lower Body) | Skill Learning: **Swimming Lesson** | Hold L-sit for 30 sec |
+| Thursday | Gym (Upper Body) | Running (2–3 km) | Swimming: Independent 50m freestyle |
+| Friday | **Active Rest/Flexibility** | Calisthenics (Core/Flexibility) | |
+| Saturday | Gym (Full Body/Functional) | Skill Learning: **Swimming Lesson** | |
+| Sunday | **Long Run** (5+ km) | Active Recovery/Prep | |
+
+### 🧠 Learning Schedule (8:00 PM – 10:00 PM)
+
+| **Time Block** | **Focus** | **Phase 1 (Days 1–30)** | **Phase 2 (Days 31–60)** | **Phase 3 (Days 61–90)** |
+|----------------|-----------|-------------------------|--------------------------|--------------------------|
+| **Learning Block 2 (7:00–8:00 PM)** | DSA/LeetCode | Easy problems (1–2/day) | Medium problems (2–3/day) | Mixed (3–4/day), System Design |
+| **Learning Block 3 (8:00–9:00 PM)** | Cloud Certs | AWS Basics/Architecture | AWS Intermediate/Labs | Databricks Prep/Advanced |
+| **Reading (9:00–10:00 PM)** | Books | Read 20 pages/day | Read 20 pages/day | Read 20 pages/day |
+
+### 🌙 Night Routine (10:00 PM – 10:30 PM)
+- **10:00 PM – 10:15 PM:** Plan Tomorrow Every Night (Review schedule, list 3 **MITs (Most Important Tasks)**)
+- **10:15 PM – 10:30 PM:** Journaling & Reflection (Track impulses/discipline)
+- **10:30 PM:** Phone off, Prepare for sleep
+
+### 📵 Digital Discipline Rules
+1. No phone for the first hour (until 7:00 AM)
+2. App/Site blockers on learning blocks (7-9 PM)
+3. Social media check (if required) limited to **15 minutes total per day** (Time Boxing)
+
+## 3. Weekly Plan
+
+| **Area** | **Target Task** | **Metric (Weekly Scorecard)** |
+|----------|-----------------|-------------------------------|
+| **Fitness Goals** | 4x Gym, 2x Running/Calisthenics, 1 gallon water daily (7 days) | Total workout sessions, Water compliance (days/7) |
+| **Skill Development** | 15 LeetCode problems solved. Finish 1 book per 2 weeks (total 6 in 90 days). 2 Swimming lessons | LeetCode count, Pages read, Swimming proficiency level |
+| **Finance Check-in** | Reconcile expenses, review investment portfolio (Sundays). Transfer **₹20,000** to investments/savings accounts | Budget compliance (%), Investment portfolio value change |
+| **Career Prep** | Research 5 target companies/roles in Amsterdam/India (20 LPA+). Update 1 section of resume/LinkedIn | Research volume, Resume section complete |
+| **Mindset & Reflection** | Impulse Control Tracking (Journal 7/7 days). Full weekly review. Social Confidence Challenge (1 new interaction) | Discipline compliance (days), Social challenge completion (Y/N) |
+| **Travel** | **Phase 1:** Plan and book 1 domestic trip. **Phase 2:** Book 2nd domestic trip. **Phase 3:** Book 3rd domestic trip + 1 international trip | Trip count booked |
+
+## 4. Looks + Body Transformation
+
+### 🏋️ Physique Training Plan
+
+| **Focus** | **Phase 1 (Adaptation)** | **Phase 2 (Hypertrophy/Strength)** | **Phase 3 (Definition/Skill)** |
+|-----------|--------------------------|-------------------------------------|--------------------------------|
+| **Gym** | Focus on form, 60–70% 1RM. Start progressive overload | Increase intensity, 8–12 rep range for muscle growth | Incorporate advanced techniques (dropsets), increase lift volume |
+| **Calisthenics** | Perfect Push-up/Squat form, Start L-sit progression (tuck hold) | Begin Pull-up training (negatives), Hold L-sit tuck for 15s | Achieve 5 Pull-ups, 30s L-sit hold (clean form) |
+| **Running** | Consistency 2x/week (2-3 km, slow pace) | Increase distance/pace (4-5 km), Track time | Increase Long Run distance (8-10 km) |
+
+### 🧖 Skin, Hair, Smile, Posture Upgrades
+
+| **Area** | **Action (Daily)** | **Action (Weekly)** | **Goal** |
+|----------|-------------------|-------------------|----------|
+| **Skin Care** | Cleanse, Moisturize, **SPF** (non-negotiable) | Exfoliate (2x), Hydrating mask (1x) | Clear, hydrated skin |
+| **Hair/Grooming** | Basic styling/neatness. Trim beard line/neck (self/barber) | 1 Professional Haircut/Month | Sharp, well-maintained look |
+| **Smile** | Brush 2x/day, floss 1x/day. Practice smiling in mirror (5 mins) | Use whitening toothpaste/strips (if needed) | Brighter, confident smile |
+| **Posture** | Daily 10 min yoga/stretching focusing on hip flexors/shoulders. **"Wall Test"** 2x/day | | Tall, confident stance (no slouching) |
+
+### 🍎 Diet Plan + Supplements
+- **Diet:** Focus on high protein, complex carbs, and healthy fats. Cook and eat fresh (minimum 90% meals)
+- **Water:** **1 Gallon (approx. 3.8 Liters) daily.** Track using a marked bottle
+- **Supplements:** Whey Protein (for muscle recovery/protein target), Creatine (optional, for strength/size), Multivitamin/Omega-3 (for general health/brain function)
+- **Sleep:** Target 7–8 hours, 10:30 PM bedtime
+
+## 5. Career Acceleration
+
+| **Timeline** | **AWS Certification** | **Databricks Certification** | **LeetCode/DSA** | **Resume/Portfolio** | **Job Switch Strategy** |
+|--------------|----------------------|------------------------------|------------------|---------------------|------------------------|
+| **Days 1–30** | Study AWS concepts. Schedule exam (end of Phase 2) | Basic prep/overview | 60 Easy problems | Audit current resume | Target company research (India) |
+| **Days 31–60** | **Complete AWS Certification** | Study Databricks concepts. Schedule exam (end of Phase 3) | 80 Medium problems. System Design basics | Refine Resume/Portfolio based on target roles | Network + Outreach (5 contacts/week) |
+| **Days 61–90** | | **Complete Databricks Certification** | 80 Mixed (Medium/Hard) problems. Advanced System Design | Finalize/Proofread all assets. **Apply for Jobs** | Prepare for Amsterdam/EU migration logistics (visa/cost) |
+
+## 6. Wealth Roadmap
+
+### 💰 Monthly Budget Adherence
+
+| **Category** | **Budget (₹)** | **Compliance Score (Monthly)** |
+|--------------|---------------|--------------------------------|
+| Essentials | ₹30,000 | Must be < 100% |
+| Wants | ₹10,000 | Must be < 100% |
+| Investments | **₹20,000** | Must be 100% |
+| Savings | **₹20,000** | Must be 100% |
+| Goals | **₹15,000** | Must be 100% |
+
+### 📈 Investment Breakdown (₹20,000/Month)
+
+| **Risk Profile** | **Allocation (%)** | **Amount (₹)** | **Instruments** |
+|------------------|-------------------|---------------|-----------------|
+| Low Risk | 30% | ₹6,000 | Emergency Fund SIP (Liquid Funds) |
+| Mid Risk | 40% | ₹8,000 | Diversified ETFs (Nifty, Global) + Gold/Silver SIP |
+| High Risk | 30% | ₹6,000 | Direct Stocks (High conviction) + Sectoral/Thematic Funds |
+
+### 🏦 Emergency Fund & Asset Creation
+1. **Emergency Fund Strategy:** Dedicate **₹6,000/month** (Low Risk SIP) towards the Emergency Fund
+   - **90-Day Goal:** ₹18,000 in dedicated liquid/safe fund
+2. **₹5L Asset Creation Plan (90-day Phase):**
+   - **Monthly Savings + Investments:** ₹40,000 (Savings + Investments)
+   - **90-Day Accumulation:** 3 × ₹40,000 = ₹1,20,000 (Progress towards the ₹5L goal)
+
+## 7. Metrics & Accountability
+
+### 📊 Daily Metrics (Track via App/Journal)
+- **Discipline:** Woke up at 6 AM (Y/N), Cold Shower (Y/N), No Phone First Hour (Y/N), Plan Tomorrow Done (Y/N)
+- **Health:** Water (Gallon Y/N), Meditation (Y/N), Gym/Workout (Y/N)
+- **Learning:** LeetCode (Problems solved), Cert Prep (Hours)
+- **Finance:** Budget Compliance (Expense Tracker Y/N)
+
+### 💯 Weekly Scorecard (Sunday Review)
+
+| **Category** | **Total Target** | **Your Score** | **Metric** |
+|--------------|------------------|---------------|------------|
+| **Fitness** | 6 Workouts | | Actual/6 |
+| **Discipline** | 7 Days | | Actual/7 |
+| **Skills** | 15 LC, 140 Pages | | LC Solved, Pages Read |
+| **Finance** | ₹55,000 Allocation | | ₹Allocated |
+| **Career** | 5 Company Research, 1 Resume Section | | Y/N |
+
+### 🎯 Monthly Milestone Targets
+
+| **Month** | **Fitness/Looks** | **Career/Skills** | **Finance/Wealth** | **Travel** |
+|-----------|-------------------|-------------------|-------------------|------------|
+| **Month 1** | Consistent Gym/Run schedule. Visible muscle tone. Strict diet adherence | Complete 60 Easy LC. Complete AWS Domain 1-2 | Establish strict budget. ₹40,000 savings/invested | Book 1 domestic trip |
+| **Month 2** | Increase lift weights by 10%. Running 5km challenge. Posture significantly improved | **Complete AWS Certification.** Complete 80 Medium LC. Start Databricks | ₹80,000 savings/invested. Investment portfolio review | Book 2nd domestic trip |
+| **Month 3** | Achieve Calisthenics goal (L-sit). 7-8 hrs sleep consistently | **Complete Databricks Cert.** Complete 80 Mixed LC/System Design. **Ready to Apply** | **₹1,20,000 towards ₹5L asset.** Finalize all goal funds | Book 3rd domestic + 1 international trip |
+
+## 8. 90-Day Outcome Checklist
+
+### ✅ Discipline & Habits
+- [ ] 90-day streak of 6 AM wake-ups
+- [ ] 90-day streak of cold showers
+- [ ] 90-day streak of meditation (10 min daily)
+- [ ] 90-day streak of planning tomorrow every night
+- [ ] Digital discipline mastery (no phone first hour)
+
+### ✅ Physical Transformation
+- [ ] 10% increase in gym weights across all major lifts
+- [ ] Achieve 5 clean pull-ups
+- [ ] Hold L-sit for 30 seconds
+- [ ] Run 5km in under 30 minutes
+- [ ] Swim 50m freestyle independently
+- [ ] Maintain 1 gallon water intake daily
+
+### ✅ Career & Skills
+- [ ] AWS Certification completed
+- [ ] Databricks Certification completed
+- [ ] 200-300 LeetCode problems solved
+- [ ] System Design fundamentals mastered
+- [ ] Resume and portfolio optimized for target roles
+- [ ] 5+ job applications submitted for 20 LPA+ roles
+
+### ✅ Financial Goals
+- [ ] ₹1,20,000 accumulated towards ₹5L asset goal
+- [ ] ₹18,000 emergency fund established
+- [ ] 90-day budget compliance (100% adherence to allocation)
+- [ ] Investment portfolio diversified across risk levels
+- [ ] Monthly expense tracking system established
+
+### ✅ Lifestyle & Growth
+- [ ] 6 books read (1 every 2 weeks)
+- [ ] 3 domestic trips planned/booked
+- [ ] 1 international trip planned/booked
+- [ ] Grooming routine established and maintained
+- [ ] Posture significantly improved
+- [ ] Social confidence challenges completed weekly
