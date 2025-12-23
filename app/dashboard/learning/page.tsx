@@ -1,12 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { 
+  BookOpen, 
+  Code, 
+  Clock, 
+  Target,
+  Award,
+  GraduationCap,
+  ArrowRight,
+  TrendingUp
+} from 'lucide-react';
 import { isSupabaseReady, getSupabaseClient } from '@/lib/supabase/client';
 import { getDomainConfig } from '@/lib/domains';
-import { DomainDashboard, FeatureSection, EmptyDomainState, ComingSoon } from '@/components/dashboard/DomainDashboard';
-import { BaseWidget, MetricWidget, ProgressWidget } from '@/components/dashboard/widgets/BaseWidget';
+import { DomainDashboard, EmptyDomainState } from '@/components/dashboard/DomainDashboard';
+import { ZenCard, ZenFade, ZenNumber, ZenProgress } from '@/components/zen';
+import { 
+  DailyActionsLayer, 
+  WeeklyRhythmLayer, 
+  ActiveProgramsLayer,
+  LongTermVisionLayer 
+} from '@/components/layers';
 import { DailyLog } from '@/types/database';
 
 const domainConfig = getDomainConfig('learning');
@@ -16,15 +33,34 @@ interface LearningData {
   totalPagesRead: number;
   totalStudyHours: number;
   todayLog: DailyLog | null;
-  recentLogs: DailyLog[];
+  weeklyStats: {
+    leetcode: number;
+    pages: number;
+    hours: number;
+  };
 }
+
+// ============================================================================
+// MAIN PAGE
+// ============================================================================
 
 export default function LearningDashboard() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<LearningData | null>(null);
+  const [dailyActions, setDailyActions] = useState({
+    leetcode: false,
+    reading: false,
+    study: false,
+  });
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
+    // Reset state on mount
+    setLoading(true);
+    setData(null);
+    setDailyActions({ leetcode: false, reading: false, study: false });
+    
     async function fetchData() {
       if (!isSupabaseReady()) {
         router.push('/setup');
@@ -47,21 +83,42 @@ export default function LearningDashboard() {
           .eq('user_id', user.id)
           .order('log_date', { ascending: false });
 
-        // Fetch today's log
-        const today = new Date().toISOString().split('T')[0];
         type LogEntry = { leetcode_solved: number | null; pages_read: number | null; study_hours: number | null; log_date: string };
+
+        const today = new Date().toISOString().split('T')[0];
         const todayLog = logs?.find((log: LogEntry) => log.log_date === today) || null;
 
+        // Initialize daily actions from today's log
+        if (todayLog) {
+          setDailyActions({
+            leetcode: (todayLog.leetcode_solved || 0) > 0,
+            reading: (todayLog.pages_read || 0) > 0,
+            study: (todayLog.study_hours || 0) > 0,
+          });
+        }
+
+        // Calculate totals
         const totalLeetCode = logs?.reduce((sum: number, log: LogEntry) => sum + (log.leetcode_solved || 0), 0) || 0;
         const totalPagesRead = logs?.reduce((sum: number, log: LogEntry) => sum + (log.pages_read || 0), 0) || 0;
         const totalStudyHours = logs?.reduce((sum: number, log: LogEntry) => sum + (log.study_hours || 0), 0) || 0;
+
+        // Calculate weekly stats
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        const weekLogs = logs?.filter((log: LogEntry) => new Date(log.log_date) >= weekAgo) || [];
+        
+        const weeklyStats = {
+          leetcode: weekLogs.reduce((sum: number, log: LogEntry) => sum + (log.leetcode_solved || 0), 0),
+          pages: weekLogs.reduce((sum: number, log: LogEntry) => sum + (log.pages_read || 0), 0),
+          hours: weekLogs.reduce((sum: number, log: LogEntry) => sum + (log.study_hours || 0), 0),
+        };
 
         setData({
           totalLeetCode,
           totalPagesRead,
           totalStudyHours,
           todayLog: todayLog as DailyLog | null,
-          recentLogs: (logs || []).slice(0, 7) as DailyLog[],
+          weeklyStats,
         });
       } catch (error) {
         console.error('Error fetching learning data:', error);
@@ -71,18 +128,14 @@ export default function LearningDashboard() {
     }
 
     fetchData();
-  }, [router]);
+  }, [pathname]);
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="p-8 bg-[var(--background)] min-h-screen">
         <div className="animate-pulse">
-          <div className="h-40 bg-slate-200 rounded-2xl mb-6" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-slate-200 rounded-2xl" />
-            ))}
-          </div>
+          <div className="h-48 bg-[var(--surface-card)] rounded-[28px] mb-6" />
+          <div className="h-60 bg-[var(--surface-card)] rounded-[28px] mb-6" />
         </div>
       </div>
     );
@@ -100,180 +153,233 @@ export default function LearningDashboard() {
     );
   }
 
-  const { totalLeetCode, totalPagesRead, totalStudyHours, todayLog, recentLogs } = data;
-  const leetCodeTarget = 300; // From constants
+  const { totalLeetCode, totalPagesRead, totalStudyHours, todayLog, weeklyStats } = data;
+  const leetCodeTarget = 300;
+  const booksTarget = 12; // 12 books = ~3000 pages (250 pages/book)
+  const pagesPerBook = 250;
+  const booksRead = Math.floor(totalPagesRead / pagesPerBook);
+  const isLeetCodeElite = totalLeetCode >= leetCodeTarget;
+
+  // ============================================================================
+  // LAYER 1: DAILY ACTIONS
+  // "What do I do TODAY?"
+  // ============================================================================
+  const layer1Actions = [
+    { 
+      id: 'leetcode', 
+      label: 'Solve LeetCode problems', 
+      icon: <Code size={18} className="text-[var(--text-muted)]" />,
+      completed: dailyActions.leetcode 
+    },
+    { 
+      id: 'reading', 
+      label: 'Read 10+ pages', 
+      icon: <BookOpen size={18} className="text-[var(--text-muted)]" />,
+      completed: dailyActions.reading 
+    },
+    { 
+      id: 'study', 
+      label: 'Study / deep work session', 
+      icon: <Clock size={18} className="text-[var(--text-muted)]" />,
+      completed: dailyActions.study 
+    },
+  ];
+
+  // ============================================================================
+  // LAYER 2: WEEKLY RHYTHM
+  // "What am I building THIS WEEK?"
+  // ============================================================================
+  const layer2Rhythms = [
+    { 
+      id: 'leetcode', 
+      label: 'LeetCode Problems', 
+      icon: '💻',
+      current: weeklyStats.leetcode, 
+      target: 21, // 3/day
+      unit: 'solved',
+      frequency: '21 per week'
+    },
+    { 
+      id: 'pages', 
+      label: 'Pages Read', 
+      icon: '📚',
+      current: weeklyStats.pages, 
+      target: 70, // 10/day
+      unit: 'pages',
+      frequency: '70 per week'
+    },
+    { 
+      id: 'study', 
+      label: 'Study Hours', 
+      icon: '⏱️',
+      current: Math.round(weeklyStats.hours * 10) / 10, 
+      target: 10,
+      unit: 'hours',
+      frequency: '10 per week'
+    },
+  ];
+
+  // ============================================================================
+  // LAYER 3: ACTIVE PROGRAMS
+  // "What am I learning over MONTHS?"
+  // ============================================================================
+  const layer3Programs = [
+    {
+      id: 'aws',
+      name: 'AWS Certification',
+      icon: '☁️',
+      category: 'Cloud Computing',
+      startDate: 'Jan 2025',
+      currentLevel: 'Studying',
+      nextMilestone: 'Pass exam',
+      progressPercent: 30,
+    },
+    {
+      id: 'databricks',
+      name: 'Databricks Certification',
+      icon: '🧱',
+      category: 'Data Engineering',
+      startDate: 'Feb 2025',
+      currentLevel: 'Planned',
+      nextMilestone: 'Start course',
+      progressPercent: 10,
+    },
+    {
+      id: 'dsa',
+      name: 'DSA Mastery',
+      icon: '🧮',
+      category: 'Algorithms',
+      startDate: 'Jan 2025',
+      currentLevel: `${totalLeetCode} problems`,
+      nextMilestone: `${leetCodeTarget} problems`,
+      progressPercent: Math.min((totalLeetCode / leetCodeTarget) * 100, 100),
+    },
+  ];
+
+  // ============================================================================
+  // LAYER 4: LONG-TERM VISION
+  // "Why am I doing all this?"
+  // ============================================================================
+  const layer4Goals = [
+    {
+      id: 'leetcode',
+      title: `Solve ${leetCodeTarget} LeetCode problems`,
+      icon: '💻',
+      timeframe: 'short' as const,
+      domain: 'Problem Solving',
+      progress: Math.min((totalLeetCode / leetCodeTarget) * 100, 100),
+    },
+    {
+      id: 'books',
+      title: `Read ${booksTarget} books this year`,
+      icon: '📚',
+      timeframe: 'short' as const,
+      domain: 'Knowledge',
+      progress: Math.min((booksRead / booksTarget) * 100, 100),
+    },
+    {
+      id: 'certs',
+      title: 'Get AWS & Databricks certified',
+      icon: '🎓',
+      timeframe: 'short' as const,
+      domain: 'Career',
+      progress: 20,
+    },
+    {
+      id: 'mastery',
+      title: 'Become a senior-level engineer',
+      icon: '🚀',
+      timeframe: 'mid' as const,
+      domain: 'Career Growth',
+    },
+    {
+      id: 'lifelong',
+      title: 'Lifelong learner identity',
+      icon: '🧠',
+      timeframe: 'long' as const,
+      domain: 'Identity',
+    },
+  ];
+
+  // Handler for toggling daily actions
+  const handleActionToggle = (id: string) => {
+    setDailyActions(prev => ({
+      ...prev,
+      [id]: !prev[id as keyof typeof prev],
+    }));
+    // TODO: Save to database
+  };
 
   return (
-    <DomainDashboard
-      config={domainConfig}
-      todayProgress={
-        todayLog
-          ? {
-              current: [
-                (todayLog.leetcode_solved || 0) > 0,
-                (todayLog.pages_read || 0) > 0,
-                (todayLog.study_hours || 0) > 0,
-              ].filter(Boolean).length,
-              total: 3,
-            }
-          : undefined
-      }
-    >
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <MetricWidget
-          title="LeetCode"
-          value={totalLeetCode}
-          icon="💻"
-          subtitle={`of ${leetCodeTarget} target`}
-          color={totalLeetCode >= leetCodeTarget ? 'success' : 'default'}
-        />
-        <MetricWidget
-          title="Pages Read"
-          value={totalPagesRead}
-          icon="📚"
-          subtitle="Total"
-        />
-        <MetricWidget
-          title="Study Hours"
-          value={totalStudyHours.toFixed(1)}
-          icon="⏱️"
-          subtitle="Total hours"
-        />
-        <MetricWidget
-          title="Today"
-          value={todayLog?.study_hours || 0}
-          icon="📅"
-          subtitle="Hours studied"
-        />
-      </div>
-
-      {/* LeetCode Progress */}
-      <FeatureSection title="LeetCode Progress" actionHref="/dashboard/log" actionLabel="Log">
-        <div className="bg-white rounded-2xl p-6 border border-slate-100">
-          <div className="flex items-center justify-between mb-4">
+    <DomainDashboard config={domainConfig}>
+      {/* Hero Stats */}
+      <ZenFade>
+        <ZenCard className="mb-8 p-6" variant={isLeetCodeElite ? 'gold' : 'elevated'} halo={isLeetCodeElite}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <p className="text-4xl font-bold text-slate-800">{totalLeetCode}</p>
-              <p className="text-slate-500">problems solved</p>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-medium text-cyan-600">
-                {Math.round((totalLeetCode / leetCodeTarget) * 100)}%
+              <p className="text-[var(--text-ghost)] text-xs uppercase tracking-[0.1em] mb-1">
+                LeetCode Progress
               </p>
-              <p className="text-slate-500 text-sm">of {leetCodeTarget} goal</p>
-            </div>
-          </div>
-          
-          <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min((totalLeetCode / leetCodeTarget) * 100, 100)}%` }}
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 mt-6">
-            <div className="text-center p-3 bg-cyan-50 rounded-xl">
-              <p className="text-2xl font-bold text-cyan-700">{leetCodeTarget - totalLeetCode}</p>
-              <p className="text-xs text-cyan-600">Remaining</p>
-            </div>
-            <div className="text-center p-3 bg-blue-50 rounded-xl">
-              <p className="text-2xl font-bold text-blue-700">
-                {recentLogs.length > 0
-                  ? Math.round(recentLogs.reduce((sum, log) => sum + (log.leetcode_solved || 0), 0) / recentLogs.length)
-                  : 0}
-              </p>
-              <p className="text-xs text-blue-600">Daily Avg</p>
-            </div>
-            <div className="text-center p-3 bg-indigo-50 rounded-xl">
-              <p className="text-2xl font-bold text-indigo-700">
-                {todayLog?.leetcode_solved || 0}
-              </p>
-              <p className="text-xs text-indigo-600">Today</p>
-            </div>
-          </div>
-        </div>
-      </FeatureSection>
-
-      {/* Today's Learning */}
-      <FeatureSection title="Today's Learning" actionHref="/dashboard/log" actionLabel="Log">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-2xl p-6 border border-slate-100">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-2xl">💻</span>
-              <h3 className="font-bold text-slate-700">LeetCode</h3>
-            </div>
-            <p className="text-4xl font-bold text-cyan-600 mb-1">
-              {todayLog?.leetcode_solved || 0}
-            </p>
-            <p className="text-slate-500 text-sm">problems solved</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-100">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-2xl">📖</span>
-              <h3 className="font-bold text-slate-700">Reading</h3>
-            </div>
-            <p className="text-4xl font-bold text-blue-600 mb-1">
-              {todayLog?.pages_read || 0}
-            </p>
-            <p className="text-slate-500 text-sm">pages read</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-100">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-2xl">📚</span>
-              <h3 className="font-bold text-slate-700">Study Time</h3>
-            </div>
-            <p className="text-4xl font-bold text-indigo-600 mb-1">
-              {todayLog?.study_hours || 0}h
-            </p>
-            <p className="text-slate-500 text-sm">hours studied</p>
-          </div>
-        </div>
-      </FeatureSection>
-
-      {/* Weekly Progress Chart */}
-      <FeatureSection title="This Week's Learning">
-        <div className="bg-white rounded-2xl p-6 border border-slate-100">
-          <div className="flex items-end justify-between gap-2 h-32">
-            {recentLogs.length > 0 ? (
-              recentLogs.slice(0, 7).reverse().map((log, idx) => {
-                const leetcode = log.leetcode_solved || 0;
-                const maxLeetcode = Math.max(...recentLogs.map(l => l.leetcode_solved || 0), 1);
-                const height = `${(leetcode / maxLeetcode) * 100}%`;
-                const date = new Date(log.log_date);
-                const dayName = date.toLocaleDateString('en', { weekday: 'short' });
-
-                return (
-                  <div key={log.log_date} className="flex-1 flex flex-col items-center gap-2">
-                    <div className="w-full h-20 flex items-end">
-                      <div
-                        className="w-full bg-gradient-to-t from-cyan-500 to-blue-500 rounded-t-lg transition-all"
-                        style={{ height: height || '4px' }}
-                      />
-                    </div>
-                    <span className="text-xs text-slate-500">{dayName}</span>
-                    <span className="text-sm font-medium text-slate-700">{leetcode}</span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-slate-400">
-                No data for this week
+              <div className="flex items-baseline gap-2">
+                <ZenNumber 
+                  value={totalLeetCode} 
+                  className="text-5xl" 
+                  gold={isLeetCodeElite}
+                />
+                <span className="text-[var(--text-muted)] text-lg">/ {leetCodeTarget}</span>
               </div>
-            )}
-          </div>
-        </div>
-      </FeatureSection>
+              <p className="text-[var(--text-ghost)] text-sm mt-2">
+                {isLeetCodeElite 
+                  ? '🎉 Goal achieved!' 
+                  : `${leetCodeTarget - totalLeetCode} more to reach your target`}
+              </p>
+              <ZenProgress 
+                value={(totalLeetCode / leetCodeTarget) * 100} 
+                gold={isLeetCodeElite} 
+                className="mt-4" 
+              />
+            </div>
 
-      {/* AI Learning Path Placeholder */}
-      <FeatureSection title="AI Learning Path">
-        <ComingSoon
-          feature="Personalized Learning Path"
-          description="Get a customized curriculum based on your goals, progress, and learning style."
-        />
-      </FeatureSection>
+            <div className="flex gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-light text-[var(--text-primary)]">{totalPagesRead}</p>
+                <p className="text-[var(--text-ghost)] text-xs">Pages read</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-light text-[var(--text-primary)]">{Math.round(totalStudyHours)}h</p>
+                <p className="text-[var(--text-ghost)] text-xs">Study hours</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-light text-[var(--text-primary)]">{booksRead}</p>
+                <p className="text-[var(--text-ghost)] text-xs">Books</p>
+              </div>
+            </div>
+
+            <Link
+              href="/dashboard/log"
+              className="flex items-center gap-2 px-6 py-3 bg-[var(--gold-primary)] text-[var(--obsidian-deepest)] rounded-2xl font-medium hover:opacity-90 transition-opacity"
+            >
+              Log Today
+              <ArrowRight size={18} />
+            </Link>
+          </div>
+        </ZenCard>
+      </ZenFade>
+
+      {/* LAYER 1: Daily Actions */}
+      <DailyActionsLayer
+        actions={layer1Actions}
+        onActionToggle={handleActionToggle}
+      />
+
+      {/* LAYER 2: Weekly Rhythm */}
+      <WeeklyRhythmLayer rhythms={layer2Rhythms} />
+
+      {/* LAYER 3: Active Programs */}
+      <ActiveProgramsLayer programs={layer3Programs} />
+
+      {/* LAYER 4: Long-Term Vision (collapsed by default) */}
+      <LongTermVisionLayer goals={layer4Goals} defaultCollapsed={true} />
     </DomainDashboard>
   );
 }
-

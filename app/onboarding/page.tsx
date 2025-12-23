@@ -2,15 +2,41 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Rocket, 
+  Target, 
+  Brain, 
+  Heart, 
+  Wallet, 
+  BookOpen, 
+  Sparkles,
+  Clock,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  Plus,
+  X,
+  Zap,
+  Moon,
+  Sun,
+  Briefcase,
+  TrendingUp,
+  Dumbbell,
+  Coffee,
+  AlertCircle
+} from 'lucide-react';
 import { isSupabaseReady, getSupabaseClient } from '@/lib/supabase/client';
+import { AppHeader } from '@/components/layout';
 
 type Step = 
   | 'welcome' 
   | 'focus_areas' 
-  | 'goals_obstacles'  // Merged: Goals + Challenges in one step
+  | 'goals_obstacles'
   | 'commitment'
   | 'schedule'
-  | 'preview'          // New: Show what plan will include
+  | 'preview'
   | 'tracking'
   | 'generating' 
   | 'review';
@@ -18,7 +44,7 @@ type Step =
 interface FocusArea {
   id: string;
   label: string;
-  icon: string;
+  icon: typeof Target;
   desc: string;
   color: string;
 }
@@ -40,170 +66,184 @@ interface OnboardingData {
   monthlyBudget: number;
 }
 
-// Focus area definitions
+// Focus area definitions with Lucide icons
 const focusAreaOptions: FocusArea[] = [
-  { id: 'health', label: 'Health & Fitness', icon: '💪', desc: 'Get fit, lose weight, build strength', color: 'from-green-500 to-emerald-500' },
-  { id: 'career', label: 'Career & Work', icon: '💼', desc: 'Grow professionally, get promoted', color: 'from-blue-500 to-indigo-500' },
-  { id: 'finance', label: 'Money & Wealth', icon: '💰', desc: 'Save, invest, build wealth', color: 'from-yellow-500 to-amber-500' },
-  { id: 'discipline', label: 'Discipline & Habits', icon: '🎯', desc: 'Build routines, self-control', color: 'from-purple-500 to-pink-500' },
-  { id: 'learning', label: 'Learning & Skills', icon: '📚', desc: 'Learn new things, upskill', color: 'from-cyan-500 to-blue-500' },
-  { id: 'personal', label: 'Personal Growth', icon: '✨', desc: 'Confidence, relationships', color: 'from-rose-500 to-red-500' },
+  { id: 'health', label: 'Health & Fitness', icon: Dumbbell, desc: 'Get fit, lose weight, build strength', color: 'var(--status-success)' },
+  { id: 'career', label: 'Career & Work', icon: Briefcase, desc: 'Grow professionally, get promoted', color: 'var(--status-info)' },
+  { id: 'finance', label: 'Money & Wealth', icon: Wallet, desc: 'Save, invest, build wealth', color: 'var(--gold-primary)' },
+  { id: 'discipline', label: 'Discipline & Habits', icon: Target, desc: 'Build routines, self-control', color: 'var(--status-error)' },
+  { id: 'learning', label: 'Learning & Skills', icon: BookOpen, desc: 'Learn new things, upskill', color: 'var(--status-info)' },
+  { id: 'personal', label: 'Personal Growth', icon: Heart, desc: 'Confidence, relationships', color: 'var(--status-error)' },
 ];
 
 // Goals organized by focus area
-const goalsByFocus: Record<string, Array<{ id: string; label: string; icon: string }>> = {
+const goalsByFocus: Record<string, Array<{ id: string; label: string; icon: typeof Target }>> = {
   health: [
-    { id: 'lose_weight', label: 'Lose weight', icon: '⚡' },
-    { id: 'build_muscle', label: 'Build muscle', icon: '💪' },
-    { id: 'improve_stamina', label: 'Improve stamina', icon: '🏃' },
-    { id: 'eat_healthier', label: 'Eat healthier', icon: '🥗' },
-    { id: 'better_sleep', label: 'Sleep better', icon: '😴' },
-    { id: 'more_energy', label: 'Have more energy', icon: '🔋' },
-    { id: 'flexibility', label: 'Improve flexibility', icon: '🧘' },
-    { id: 'quit_smoking', label: 'Quit smoking', icon: '🚭' },
+    { id: 'lose_weight', label: 'Lose weight', icon: Zap },
+    { id: 'build_muscle', label: 'Build muscle', icon: Dumbbell },
+    { id: 'improve_stamina', label: 'Improve stamina', icon: TrendingUp },
+    { id: 'eat_healthier', label: 'Eat healthier', icon: Heart },
+    { id: 'better_sleep', label: 'Sleep better', icon: Moon },
+    { id: 'more_energy', label: 'Have more energy', icon: Zap },
   ],
   career: [
-    { id: 'get_promoted', label: 'Get promoted', icon: '📈' },
-    { id: 'new_job', label: 'Find new job', icon: '💼' },
-    { id: 'learn_skills', label: 'Learn new skills', icon: '🧠' },
-    { id: 'build_network', label: 'Build network', icon: '🤝' },
-    { id: 'start_business', label: 'Start a business', icon: '🚀' },
-    { id: 'get_certified', label: 'Get certified', icon: '📜' },
-    { id: 'improve_performance', label: 'Better performance', icon: '⭐' },
-    { id: 'work_life_balance', label: 'Work-life balance', icon: '⚖️' },
+    { id: 'get_promoted', label: 'Get promoted', icon: TrendingUp },
+    { id: 'new_job', label: 'Find new job', icon: Briefcase },
+    { id: 'learn_skills', label: 'Learn new skills', icon: Brain },
+    { id: 'build_network', label: 'Build network', icon: Heart },
+    { id: 'start_business', label: 'Start a business', icon: Rocket },
+    { id: 'get_certified', label: 'Get certified', icon: Check },
   ],
   finance: [
-    { id: 'save_money', label: 'Save more money', icon: '💵' },
-    { id: 'pay_debt', label: 'Pay off debt', icon: '💳' },
-    { id: 'start_investing', label: 'Start investing', icon: '📊' },
-    { id: 'emergency_fund', label: 'Emergency fund', icon: '🏦' },
-    { id: 'budget_better', label: 'Budget better', icon: '📋' },
-    { id: 'increase_income', label: 'Increase income', icon: '💰' },
-    { id: 'financial_freedom', label: 'Financial freedom', icon: '🦅' },
-    { id: 'buy_asset', label: 'Buy an asset', icon: '🏠' },
+    { id: 'save_money', label: 'Save more money', icon: Wallet },
+    { id: 'pay_debt', label: 'Pay off debt', icon: Target },
+    { id: 'start_investing', label: 'Start investing', icon: TrendingUp },
+    { id: 'emergency_fund', label: 'Emergency fund', icon: AlertCircle },
+    { id: 'budget_better', label: 'Budget better', icon: Calendar },
+    { id: 'increase_income', label: 'Increase income', icon: Zap },
   ],
   discipline: [
-    { id: 'wake_early', label: 'Wake up early', icon: '🌅' },
-    { id: 'build_routine', label: 'Build routine', icon: '📅' },
-    { id: 'reduce_phone', label: 'Less phone time', icon: '📵' },
-    { id: 'meditate', label: 'Meditate daily', icon: '🧘' },
-    { id: 'read_more', label: 'Read more books', icon: '📚' },
-    { id: 'journal', label: 'Journal regularly', icon: '📝' },
-    { id: 'stop_procrastinating', label: 'Stop procrastinating', icon: '⏰' },
-    { id: 'control_impulses', label: 'Control impulses', icon: '🎯' },
+    { id: 'wake_early', label: 'Wake up early', icon: Sun },
+    { id: 'build_routine', label: 'Build routine', icon: Calendar },
+    { id: 'reduce_phone', label: 'Less phone time', icon: AlertCircle },
+    { id: 'meditate', label: 'Meditate daily', icon: Brain },
+    { id: 'read_more', label: 'Read more books', icon: BookOpen },
+    { id: 'journal', label: 'Journal regularly', icon: BookOpen },
   ],
   learning: [
-    { id: 'learn_coding', label: 'Learn coding', icon: '💻' },
-    { id: 'learn_language', label: 'Learn language', icon: '🗣️' },
-    { id: 'online_courses', label: 'Complete courses', icon: '🎓' },
-    { id: 'read_books', label: 'Read 12+ books', icon: '📖' },
-    { id: 'creative_skill', label: 'Creative skill', icon: '🎨' },
-    { id: 'public_speaking', label: 'Public speaking', icon: '🎤' },
-    { id: 'writing', label: 'Improve writing', icon: '✍️' },
-    { id: 'problem_solving', label: 'Problem solving', icon: '🧩' },
+    { id: 'learn_coding', label: 'Learn coding', icon: Brain },
+    { id: 'learn_language', label: 'Learn language', icon: BookOpen },
+    { id: 'online_courses', label: 'Complete courses', icon: Check },
+    { id: 'read_books', label: 'Read 12+ books', icon: BookOpen },
+    { id: 'creative_skill', label: 'Creative skill', icon: Sparkles },
+    { id: 'public_speaking', label: 'Public speaking', icon: Target },
   ],
   personal: [
-    { id: 'more_confident', label: 'Be more confident', icon: '🦁' },
-    { id: 'better_relationships', label: 'Better relationships', icon: '❤️' },
-    { id: 'be_social', label: 'Be more social', icon: '👥' },
-    { id: 'travel_more', label: 'Travel more', icon: '✈️' },
-    { id: 'find_purpose', label: 'Find purpose', icon: '🧭' },
-    { id: 'mental_health', label: 'Mental health', icon: '🧠' },
-    { id: 'hobbies', label: 'Develop hobbies', icon: '🎸' },
-    { id: 'appearance', label: 'Look better', icon: '✨' },
+    { id: 'more_confident', label: 'Be more confident', icon: Zap },
+    { id: 'better_relationships', label: 'Better relationships', icon: Heart },
+    { id: 'be_social', label: 'Be more social', icon: Heart },
+    { id: 'travel_more', label: 'Travel more', icon: Rocket },
+    { id: 'find_purpose', label: 'Find purpose', icon: Target },
+    { id: 'mental_health', label: 'Mental health', icon: Brain },
   ],
 };
 
-// What I want to work on (positive framing)
-const improvementsByFocus: Record<string, Array<{ id: string; label: string; icon: string }>> = {
+// Improvements/obstacles by focus area
+const improvementsByFocus: Record<string, Array<{ id: string; label: string; icon: typeof Target }>> = {
   health: [
-    { id: 'find_time', label: 'Make time for fitness', icon: '⏰' },
-    { id: 'stay_motivated', label: 'Stay motivated daily', icon: '🔥' },
-    { id: 'learn_workouts', label: 'Learn proper workouts', icon: '📚' },
-    { id: 'build_consistency', label: 'Build consistency', icon: '📅' },
-    { id: 'eat_better', label: 'Eat healthier meals', icon: '🥗' },
+    { id: 'find_time', label: 'Make time for fitness', icon: Clock },
+    { id: 'stay_motivated', label: 'Stay motivated daily', icon: Zap },
+    { id: 'learn_workouts', label: 'Learn proper workouts', icon: BookOpen },
+    { id: 'build_consistency', label: 'Build consistency', icon: Calendar },
+    { id: 'eat_better', label: 'Eat healthier meals', icon: Heart },
   ],
   career: [
-    { id: 'find_direction', label: 'Find my career path', icon: '🧭' },
-    { id: 'break_through', label: 'Break through barriers', icon: '🚀' },
-    { id: 'gain_skills', label: 'Gain new skills', icon: '🧠' },
-    { id: 'build_confidence', label: 'Build confidence', icon: '💪' },
-    { id: 'grow_network', label: 'Grow my network', icon: '🤝' },
+    { id: 'find_direction', label: 'Find my career path', icon: Target },
+    { id: 'break_through', label: 'Break through barriers', icon: Rocket },
+    { id: 'gain_skills', label: 'Gain new skills', icon: Brain },
+    { id: 'build_confidence', label: 'Build confidence', icon: Zap },
+    { id: 'grow_network', label: 'Grow my network', icon: Heart },
   ],
   finance: [
-    { id: 'start_saving', label: 'Start saving regularly', icon: '🐷' },
-    { id: 'control_spending', label: 'Control my spending', icon: '💳' },
-    { id: 'become_debt_free', label: 'Become debt-free', icon: '🎯' },
-    { id: 'learn_investing', label: 'Learn to invest', icon: '📈' },
-    { id: 'budget_better', label: 'Budget smarter', icon: '📊' },
+    { id: 'start_saving', label: 'Start saving regularly', icon: Wallet },
+    { id: 'control_spending', label: 'Control my spending', icon: AlertCircle },
+    { id: 'become_debt_free', label: 'Become debt-free', icon: Target },
+    { id: 'learn_investing', label: 'Learn to invest', icon: TrendingUp },
+    { id: 'budget_better', label: 'Budget smarter', icon: Calendar },
   ],
   discipline: [
-    { id: 'beat_procrastination', label: 'Beat procrastination', icon: '⚡' },
-    { id: 'digital_detox', label: 'Digital detox', icon: '📵' },
-    { id: 'create_routine', label: 'Create a routine', icon: '📋' },
-    { id: 'master_self_control', label: 'Master self-control', icon: '🎯' },
-    { id: 'stay_focused', label: 'Stay focused', icon: '🔍' },
+    { id: 'beat_procrastination', label: 'Beat procrastination', icon: Zap },
+    { id: 'digital_detox', label: 'Digital detox', icon: AlertCircle },
+    { id: 'create_routine', label: 'Create a routine', icon: Calendar },
+    { id: 'master_self_control', label: 'Master self-control', icon: Target },
+    { id: 'stay_focused', label: 'Stay focused', icon: Target },
   ],
   learning: [
-    { id: 'make_time', label: 'Make time to learn', icon: '⏰' },
-    { id: 'focus_path', label: 'Focus on one path', icon: '🛤️' },
-    { id: 'retain_knowledge', label: 'Retain what I learn', icon: '🧠' },
-    { id: 'stay_curious', label: 'Stay curious & engaged', icon: '✨' },
-    { id: 'practice_daily', label: 'Practice daily', icon: '💻' },
+    { id: 'make_time', label: 'Make time to learn', icon: Clock },
+    { id: 'focus_path', label: 'Focus on one path', icon: Target },
+    { id: 'retain_knowledge', label: 'Retain what I learn', icon: Brain },
+    { id: 'stay_curious', label: 'Stay curious & engaged', icon: Sparkles },
+    { id: 'practice_daily', label: 'Practice daily', icon: Calendar },
   ],
   personal: [
-    { id: 'boost_confidence', label: 'Boost my confidence', icon: '🦁' },
-    { id: 'manage_stress', label: 'Manage stress better', icon: '🧘' },
-    { id: 'connect_people', label: 'Connect with people', icon: '❤️' },
-    { id: 'believe_myself', label: 'Believe in myself', icon: '⭐' },
-    { id: 'find_balance', label: 'Find life balance', icon: '⚖️' },
+    { id: 'boost_confidence', label: 'Boost my confidence', icon: Zap },
+    { id: 'manage_stress', label: 'Manage stress better', icon: Brain },
+    { id: 'connect_people', label: 'Connect with people', icon: Heart },
+    { id: 'believe_myself', label: 'Believe in myself', icon: Sparkles },
+    { id: 'find_balance', label: 'Find life balance', icon: Target },
   ],
 };
 
-// Tracking by focus
-const trackingByFocus: Record<string, Array<{ id: string; label: string; icon: string }>> = {
+// Tracking options by focus area
+const trackingByFocus: Record<string, Array<{ id: string; label: string; icon: typeof Target }>> = {
   health: [
-    { id: 'weight', label: 'Weight', icon: '⚖️' },
-    { id: 'workouts', label: 'Workouts', icon: '🏋️' },
-    { id: 'calories', label: 'Calories', icon: '🍎' },
-    { id: 'water', label: 'Water', icon: '💧' },
-    { id: 'sleep', label: 'Sleep', icon: '😴' },
+    { id: 'weight', label: 'Weight', icon: TrendingUp },
+    { id: 'workouts', label: 'Workouts', icon: Dumbbell },
+    { id: 'calories', label: 'Calories', icon: Heart },
+    { id: 'water', label: 'Water', icon: Coffee },
+    { id: 'sleep', label: 'Sleep', icon: Moon },
   ],
   career: [
-    { id: 'tasks', label: 'Tasks', icon: '✔️' },
-    { id: 'learning', label: 'Learning', icon: '📚' },
-    { id: 'networking', label: 'Networking', icon: '🤝' },
-    { id: 'projects', label: 'Projects', icon: '📁' },
+    { id: 'tasks', label: 'Tasks', icon: Check },
+    { id: 'learning', label: 'Learning', icon: BookOpen },
+    { id: 'networking', label: 'Networking', icon: Heart },
+    { id: 'projects', label: 'Projects', icon: Briefcase },
   ],
   finance: [
-    { id: 'spending', label: 'Spending', icon: '💳' },
-    { id: 'savings', label: 'Savings', icon: '🐷' },
-    { id: 'investments', label: 'Investments', icon: '📈' },
-    { id: 'budget', label: 'Budget', icon: '📊' },
+    { id: 'spending', label: 'Spending', icon: Wallet },
+    { id: 'savings', label: 'Savings', icon: Wallet },
+    { id: 'investments', label: 'Investments', icon: TrendingUp },
+    { id: 'budget', label: 'Budget', icon: Calendar },
   ],
   discipline: [
-    { id: 'habits', label: 'Habits', icon: '✅' },
-    { id: 'wake_time', label: 'Wake Time', icon: '⏰' },
-    { id: 'screen_time', label: 'Screen Time', icon: '📱' },
-    { id: 'meditation', label: 'Meditation', icon: '🧘' },
+    { id: 'habits', label: 'Habits', icon: Check },
+    { id: 'wake_time', label: 'Wake Time', icon: Sun },
+    { id: 'screen_time', label: 'Screen Time', icon: AlertCircle },
+    { id: 'meditation', label: 'Meditation', icon: Brain },
   ],
   learning: [
-    { id: 'study_hours', label: 'Study Hours', icon: '📖' },
-    { id: 'courses', label: 'Courses', icon: '🎓' },
-    { id: 'books', label: 'Books', icon: '📚' },
-    { id: 'practice', label: 'Practice', icon: '💻' },
+    { id: 'study_hours', label: 'Study Hours', icon: Clock },
+    { id: 'courses', label: 'Courses', icon: BookOpen },
+    { id: 'books', label: 'Books', icon: BookOpen },
+    { id: 'practice', label: 'Practice', icon: Target },
   ],
   personal: [
-    { id: 'mood', label: 'Mood', icon: '😊' },
-    { id: 'gratitude', label: 'Gratitude', icon: '🙏' },
-    { id: 'social', label: 'Social', icon: '👥' },
-    { id: 'journal', label: 'Journal', icon: '📝' },
+    { id: 'mood', label: 'Mood', icon: Heart },
+    { id: 'gratitude', label: 'Gratitude', icon: Sparkles },
+    { id: 'social', label: 'Social', icon: Heart },
+    { id: 'journal', label: 'Journal', icon: BookOpen },
   ],
 };
+
+// Reusable card component
+function ZenCard({ children, className = '', selected = false, onClick }: { 
+  children: React.ReactNode; 
+  className?: string;
+  selected?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <motion.div
+      className={`
+        p-5 rounded-2xl border transition-all cursor-pointer
+        ${selected 
+          ? 'bg-[var(--gold-primary)]/10 border-[var(--gold-primary)]' 
+          : 'bg-[var(--surface-card)] border-[var(--border-subtle)] hover:border-[var(--border-medium)]'
+        }
+        ${className}
+      `}
+      onClick={onClick}
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStepInternal] = useState<Step>('welcome');
+  const [step, setStep] = useState<Step>('welcome');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -212,24 +252,6 @@ export default function OnboardingPage() {
   
   const [customGoalInputs, setCustomGoalInputs] = useState<Record<string, string>>({});
   const [customTrackingInput, setCustomTrackingInput] = useState('');
-
-  // DEBUG: Wrapper to log step changes with stack trace
-  const setStep = (newStep: Step) => {
-    console.log('[DEBUG STEP CHANGE] From:', step, '→ To:', newStep);
-    console.log('[DEBUG STEP CHANGE] Stack trace:', new Error().stack);
-    setStepInternal(newStep);
-  };
-
-  // DEBUG: Log step changes
-  console.log('[DEBUG] Current step:', step, '| Loading:', loading, '| Saving:', saving);
-
-  // DEBUG: Detect component unmount
-  useEffect(() => {
-    console.log('[DEBUG] OnboardingPage MOUNTED');
-    return () => {
-      console.log('[DEBUG] OnboardingPage UNMOUNTING - this may indicate unexpected navigation');
-    };
-  }, []);
   
   const [data, setData] = useState<OnboardingData>({
     focusAreas: [],
@@ -249,46 +271,33 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
-    console.log('[DEBUG] useEffect running - checking Supabase ready...');
-    
     if (!isSupabaseReady()) {
-      console.log('[DEBUG] Supabase NOT ready - redirecting to /setup');
       router.push('/setup');
       return;
     }
-    console.log('[DEBUG] Supabase IS ready');
 
     const loadUser = async () => {
-      console.log('[DEBUG] loadUser() called');
       try {
         const supabase = getSupabaseClient();
-        console.log('[DEBUG] Getting user from Supabase auth...');
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        console.log('[DEBUG] Auth result - user:', user?.id || 'null', '| authError:', authError?.message || 'none');
+        const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
-          console.log('[DEBUG] No user found - redirecting to /auth/login');
           router.push('/auth/login');
           return;
         }
 
-        console.log('[DEBUG] Fetching profile for user:', user.id);
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('name')
           .eq('id', user.id)
           .single();
 
-        console.log('[DEBUG] Profile result:', profile, '| profileError:', profileError?.message || 'none');
-
         if (profile?.name) {
           setUserName(profile.name);
         }
       } catch (err) {
-        console.error('[DEBUG] Error loading user:', err);
+        console.error('Error loading user:', err);
       } finally {
-        console.log('[DEBUG] loadUser() complete - setting loading to false');
         setLoading(false);
       }
     };
@@ -362,32 +371,21 @@ export default function OnboardingPage() {
   };
 
   const handleGeneratePlan = async () => {
-    console.log('[DEBUG] handleGeneratePlan() called - transitioning to generating step');
-    console.log('[DEBUG] Current data state:', JSON.stringify(data, null, 2));
     setStep('generating');
     
     try {
-      console.log('[DEBUG] Calling /api/generate-plan...');
       const response = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          userName,
-        }),
+        body: JSON.stringify({ ...data, userName }),
       });
 
-      console.log('[DEBUG] API response status:', response.status);
       const result = await response.json();
-      console.log('[DEBUG] API result:', result);
-      
       const plan = result.plan || generateFallbackPlan();
-      console.log('[DEBUG] Setting generated plan and transitioning to review step');
       setGeneratedPlan(plan);
       setStep('review');
     } catch (err) {
-      console.error('[DEBUG] Error generating plan:', err);
-      console.log('[DEBUG] Using fallback plan');
+      console.error('Error generating plan:', err);
       setGeneratedPlan(generateFallbackPlan());
       setStep('review');
     }
@@ -405,7 +403,7 @@ export default function OnboardingPage() {
         const goal = goals.find(g => g.id === gId);
         if (goal) {
           allGoals.push(goal.label);
-          habits.push({ name: goal.label, icon: goal.icon, target: 'Daily' });
+          habits.push({ name: goal.label, icon: '🎯', target: 'Daily' });
         }
       });
 
@@ -442,148 +440,52 @@ export default function OnboardingPage() {
   };
 
   const savePlanAndContinue = async () => {
-    console.log('[DEBUG] savePlanAndContinue() called');
     setSaving(true);
     setError('');
     
     try {
       const supabase = getSupabaseClient();
-      console.log('[DEBUG] Getting user for save...');
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      console.log('[DEBUG] Save - user:', user?.id || 'null', '| authError:', authError?.message || 'none');
+      const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.log('[DEBUG] No user in save - redirecting to /auth/login');
         router.push('/auth/login');
         return;
       }
 
-      // First check if the columns exist
-      console.log('[DEBUG] Checking profile exists...');
-      const { data: profile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      console.log('[DEBUG] Profile check - profile:', profile, '| fetchError:', fetchError?.message || 'none');
-
-      if (fetchError) {
-        console.error('[DEBUG] Fetch error:', fetchError);
-        setError(`Database error: ${fetchError.message}`);
-        return;
-      }
-
-      // Try to update with just basic fields first
       const updateData: Record<string, any> = {
         wake_time: data.wakeUpTime,
         start_date: new Date().toISOString().split('T')[0],
+        onboarding_complete: true,
+        preferences: data,
+        generated_plan: generatedPlan,
       };
 
-      // Try to add onboarding fields (they might not exist yet)
-      try {
-        updateData.onboarding_complete = true;
-        updateData.preferences = data;
-        updateData.generated_plan = generatedPlan;
-      } catch (e) {
-        console.warn('[DEBUG] Extended fields not available');
-      }
-
-      console.log('[DEBUG] Updating profile with data:', updateData);
       const { error: updateError } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('id', user.id);
 
       if (updateError) {
-        console.error('[DEBUG] Update error:', updateError);
-        
-        // If the columns don't exist, try update without generated_plan
-        if (updateError.message.includes('column') && updateError.message.includes('generated_plan')) {
-          console.log('[DEBUG] Trying update without generated_plan...');
-          const { error: midError } = await supabase
-            .from('profiles')
-            .update({
-              wake_time: data.wakeUpTime,
-              start_date: new Date().toISOString().split('T')[0],
-              onboarding_complete: true,
-              preferences: data,
-            })
-            .eq('id', user.id);
-
-          if (midError) {
-            console.error('[DEBUG] Mid update error:', midError);
-            // If preferences also fails, try truly minimal update
-            if (midError.message.includes('column')) {
-              console.log('[DEBUG] Trying minimal update with just onboarding_complete...');
-              const { error: minimalError } = await supabase
-                .from('profiles')
-                .update({
-                  wake_time: data.wakeUpTime,
-                  start_date: new Date().toISOString().split('T')[0],
-                  onboarding_complete: true,
-                })
-                .eq('id', user.id);
-
-              if (minimalError) {
-                console.error('[DEBUG] Minimal update error:', minimalError);
-                setError(`Save failed: ${minimalError.message}`);
-                return;
-              }
-            } else {
-              setError(`Save failed: ${midError.message}`);
-              return;
-            }
-          }
-        } else if (updateError.message.includes('column')) {
-          // Other column missing - try minimal with onboarding_complete
-          console.log('[DEBUG] Trying minimal update...');
-          const { error: minimalError } = await supabase
-            .from('profiles')
-            .update({
-              wake_time: data.wakeUpTime,
-              start_date: new Date().toISOString().split('T')[0],
-              onboarding_complete: true,
-            })
-            .eq('id', user.id);
-
-          if (minimalError) {
-            console.error('[DEBUG] Minimal update error:', minimalError);
-            setError(`Save failed: ${minimalError.message}`);
-            return;
-          }
-        } else {
-          setError(`Save failed: ${updateError.message}`);
-          return;
-        }
+        // Fallback to minimal update
+        await supabase
+          .from('profiles')
+          .update({
+            wake_time: data.wakeUpTime,
+            start_date: new Date().toISOString().split('T')[0],
+            onboarding_complete: true,
+          })
+          .eq('id', user.id);
       }
 
-      console.log('[DEBUG] Save successful - redirecting to /dashboard');
       router.push('/dashboard');
     } catch (err: any) {
-      console.error('[DEBUG] Error saving plan:', err);
+      console.error('Error saving plan:', err);
       setError(err.message || 'Failed to save. Please try again.');
     } finally {
-      console.log('[DEBUG] savePlanAndContinue() complete - setSaving(false)');
       setSaving(false);
     }
   };
 
-  // Progress calculation - V2 optimized flow (8 steps)
-  const steps: Step[] = ['welcome', 'focus_areas', 'goals_obstacles', 'commitment', 'schedule', 'preview', 'tracking', 'generating', 'review'];
-  const currentIndex = steps.indexOf(step);
-  const progress = ((currentIndex) / (steps.length - 1)) * 100;
-  
-  // Time estimate based on current step
-  const getTimeEstimate = () => {
-    const remainingSteps = steps.length - 1 - currentIndex;
-    if (remainingSteps <= 0) return '';
-    const minutes = Math.ceil(remainingSteps * 0.3); // ~20 seconds per step
-    return minutes <= 1 ? '~1 min left' : `~${minutes} mins left`;
-  };
-
-  // Smart default tracking based on selected focus areas
   const getSmartDefaultTracking = () => {
     const defaults: string[] = [];
     if (data.focusAreas.includes('health')) defaults.push('workouts', 'water', 'sleep');
@@ -592,16 +494,25 @@ export default function OnboardingPage() {
     if (data.focusAreas.includes('career')) defaults.push('tasks', 'learning');
     if (data.focusAreas.includes('learning')) defaults.push('study_hours', 'books');
     if (data.focusAreas.includes('personal')) defaults.push('mood', 'journal');
-    return defaults.slice(0, 5); // Max 5 defaults
+    return defaults.slice(0, 5);
   };
+
+  // Progress calculation
+  const steps: Step[] = ['welcome', 'focus_areas', 'goals_obstacles', 'commitment', 'schedule', 'preview', 'tracking', 'generating', 'review'];
+  const currentIndex = steps.indexOf(step);
+  const progress = ((currentIndex) / (steps.length - 1)) * 100;
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-violet-50 to-indigo-50">
-        <div className="text-center">
-          <div className="text-5xl mb-4 animate-bounce">🚀</div>
-          <p className="text-slate-600">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--obsidian-deepest)]">
+        <motion.div 
+          className="text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Rocket size={48} className="text-[var(--gold-primary)] mx-auto mb-4 animate-bounce" />
+          <p className="text-[var(--text-muted)]">Loading...</p>
+        </motion.div>
       </div>
     );
   }
@@ -610,97 +521,149 @@ export default function OnboardingPage() {
     switch (step) {
       case 'welcome':
         return (
-          <div className="text-center max-w-lg mx-auto">
-            <div className="text-7xl mb-6">👋</div>
-            <h1 className="text-4xl font-bold text-slate-800 mb-4">
-              Welcome{userName ? `, ${userName}` : ''}!
+          <motion.div 
+            className="text-center max-w-lg mx-auto pt-20"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <motion.div
+              className="w-24 h-24 rounded-3xl bg-[var(--gold-primary)]/10 flex items-center justify-center mx-auto mb-8"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', delay: 0.2 }}
+            >
+              <Sparkles size={48} className="text-[var(--gold-primary)]" />
+            </motion.div>
+            
+            <h1 className="text-4xl font-light text-[var(--text-primary)] mb-4">
+              Welcome{userName ? `, ${userName}` : ''}
             </h1>
-            <p className="text-xl text-slate-600 mb-8">
+            <p className="text-xl text-[var(--text-muted)] mb-8">
               Let&apos;s create a personalized plan that fits YOUR life.
             </p>
-            <p className="text-slate-500 mb-8">
+            <p className="text-[var(--text-ghost)] mb-12">
               Takes about 2 minutes. Worth every second.
             </p>
-            <button
+            
+            <motion.button
               onClick={() => setStep('focus_areas')}
-              className="px-8 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-lg font-bold rounded-2xl hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg shadow-violet-200"
+              className="px-10 py-4 bg-[var(--gold-primary)] text-[var(--obsidian-deepest)] text-lg font-medium rounded-2xl flex items-center gap-3 mx-auto"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              Let&apos;s Begin →
-            </button>
-          </div>
+              Let&apos;s Begin
+              <ChevronRight size={20} />
+            </motion.button>
+          </motion.div>
         );
 
       case 'focus_areas':
         return (
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-slate-800 mb-3">
+          <motion.div 
+            className="max-w-3xl mx-auto"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-light text-[var(--text-primary)] mb-3">
                 What areas do you want to improve?
               </h2>
-              <p className="text-slate-500">Select one or more — we&apos;ll tailor your plan to each</p>
+              <p className="text-[var(--text-ghost)]">Select one or more — we&apos;ll tailor your plan to each</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {focusAreaOptions.map((area) => (
-                <button
-                  key={area.id}
-                  onClick={() => toggleFocusArea(area.id)}
-                  className={`p-6 rounded-2xl text-left transition-all ${
-                    data.focusAreas.includes(area.id)
-                      ? `bg-gradient-to-r ${area.color} text-white shadow-lg scale-[1.02]`
-                      : 'bg-white border-2 border-slate-200 hover:border-slate-300 hover:shadow-md'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <span className="text-4xl">{area.icon}</span>
-                    {data.focusAreas.includes(area.id) && (
-                      <span className="bg-white/30 px-2 py-1 rounded-full text-sm font-bold">✓</span>
-                    )}
-                  </div>
-                  <h3 className={`text-lg font-bold mt-3 ${data.focusAreas.includes(area.id) ? 'text-white' : 'text-slate-800'}`}>
-                    {area.label}
-                  </h3>
-                  <p className={`text-sm mt-1 ${data.focusAreas.includes(area.id) ? 'text-white/80' : 'text-slate-500'}`}>
-                    {area.desc}
-                  </p>
-                </button>
-              ))}
+              {focusAreaOptions.map((area, i) => {
+                const IconComponent = area.icon;
+                const isSelected = data.focusAreas.includes(area.id);
+                
+                return (
+                  <motion.div
+                    key={area.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                  >
+                    <ZenCard 
+                      selected={isSelected}
+                      onClick={() => toggleFocusArea(area.id)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div 
+                          className="w-12 h-12 rounded-xl flex items-center justify-center"
+                          style={{ backgroundColor: `${area.color}20` }}
+                        >
+                          <IconComponent size={24} style={{ color: area.color }} />
+                        </div>
+                        {isSelected && (
+                          <div className="w-6 h-6 rounded-full bg-[var(--gold-primary)] flex items-center justify-center">
+                            <Check size={14} className="text-[var(--obsidian-deepest)]" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-medium text-[var(--text-primary)] mt-4">
+                        {area.label}
+                      </h3>
+                      <p className="text-sm text-[var(--text-ghost)] mt-1">
+                        {area.desc}
+                      </p>
+                    </ZenCard>
+                  </motion.div>
+                );
+              })}
             </div>
 
             {data.focusAreas.length > 0 && (
-              <div className="mt-6 p-4 bg-violet-50 rounded-xl text-center">
-                <p className="text-violet-700 font-medium">
-                  ✓ {data.focusAreas.length} area{data.focusAreas.length > 1 ? 's' : ''} selected
+              <motion.div 
+                className="mt-8 p-4 rounded-xl bg-[var(--gold-primary)]/10 border border-[var(--gold-primary)]/30 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <p className="text-[var(--gold-primary)] font-medium">
+                  {data.focusAreas.length} area{data.focusAreas.length > 1 ? 's' : ''} selected
                 </p>
-              </div>
+              </motion.div>
             )}
 
             <div className="flex justify-between mt-10">
-              <button onClick={() => setStep('welcome')} className="px-6 py-3 text-slate-500 hover:text-slate-800">
-                ← Back
-              </button>
-              <button
+              <motion.button 
+                onClick={() => setStep('welcome')} 
+                className="px-6 py-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-2"
+                whileHover={{ x: -4 }}
+              >
+                <ChevronLeft size={18} />
+                Back
+              </motion.button>
+              <motion.button
                 onClick={() => setStep('goals_obstacles')}
                 disabled={data.focusAreas.length === 0}
-                className="px-8 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-xl disabled:opacity-50"
+                className="px-8 py-3 bg-[var(--gold-primary)] text-[var(--obsidian-deepest)] font-medium rounded-xl disabled:opacity-50 flex items-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                Next →
-              </button>
+                Next
+                <ChevronRight size={18} />
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'goals_obstacles':
         return (
-          <div className="max-w-4xl mx-auto">
+          <motion.div 
+            className="max-w-4xl mx-auto"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-slate-800 mb-2">
+              <h2 className="text-3xl font-light text-[var(--text-primary)] mb-2">
                 Goals & What&apos;s Holding You Back
               </h2>
-              <p className="text-slate-600">For each area, tell us what you want to achieve and your main obstacle</p>
+              <p className="text-[var(--text-ghost)]">For each area, tell us what you want to achieve and your main obstacle</p>
             </div>
             
-            <div className="space-y-8">
+            <div className="space-y-6">
               {data.focusAreas.map((focusId) => {
                 const area = focusAreaOptions.find(a => a.id === focusId)!;
                 const goals = goalsByFocus[focusId] || [];
@@ -708,41 +671,62 @@ export default function OnboardingPage() {
                 const selectedGoals = data.goalsByFocus[focusId] || [];
                 const customGoals = data.customGoals[focusId] || [];
                 const isComplete = (selectedGoals.length + customGoals.length) > 0 && data.challenges[focusId];
+                const IconComponent = area.icon;
 
                 return (
-                  <div key={focusId} className={`bg-white rounded-2xl p-6 border-2 transition-all ${isComplete ? 'border-green-300 bg-green-50/30' : 'border-slate-200'}`}>
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="text-3xl">{area.icon}</span>
-                      <h3 className="text-xl font-bold text-slate-800">{area.label}</h3>
+                  <motion.div 
+                    key={focusId} 
+                    className={`rounded-2xl p-6 border ${
+                      isComplete 
+                        ? 'bg-[var(--status-success)]/5 border-[var(--status-success)]/30' 
+                        : 'bg-[var(--surface-card)] border-[var(--border-subtle)]'
+                    }`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <div className="flex items-center gap-3 mb-5">
+                      <div 
+                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: `${area.color}20` }}
+                      >
+                        <IconComponent size={20} style={{ color: area.color }} />
+                      </div>
+                      <h3 className="text-xl font-medium text-[var(--text-primary)]">{area.label}</h3>
                       {isComplete && (
-                        <span className="ml-auto px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium flex items-center gap-1">
-                          ✓ Complete
+                        <span className="ml-auto px-3 py-1 bg-[var(--status-success)]/10 text-[var(--status-success)] rounded-full text-sm font-medium flex items-center gap-1">
+                          <Check size={14} />
+                          Complete
                         </span>
                       )}
                     </div>
                     
                     {/* Goals Section */}
                     <div className="mb-6">
-                      <p className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-                        🎯 What do you want to achieve? <span className="text-slate-400 font-normal">(select 1-3)</span>
+                      <p className="text-sm font-medium text-[var(--text-muted)] mb-3 flex items-center gap-2">
+                        <Target size={14} />
+                        What do you want to achieve? <span className="text-[var(--text-ghost)]">(select 1-3)</span>
                       </p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-                        {goals.slice(0, 6).map((goal) => (
-                          <button
-                            key={goal.id}
-                            onClick={() => toggleGoal(focusId, goal.id)}
-                            className={`p-3 rounded-xl text-left transition-all flex items-center gap-2 ${
-                              selectedGoals.includes(goal.id)
-                                ? `bg-gradient-to-r ${area.color} text-white shadow-md`
-                                : 'bg-slate-50 hover:bg-slate-100 border border-slate-200'
-                            }`}
-                          >
-                            <span className="text-lg">{goal.icon}</span>
-                            <span className={`text-sm font-medium ${selectedGoals.includes(goal.id) ? 'text-white' : 'text-slate-700'}`}>
-                              {goal.label}
-                            </span>
-                          </button>
-                        ))}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
+                        {goals.map((goal) => {
+                          const GoalIcon = goal.icon;
+                          const isSelected = selectedGoals.includes(goal.id);
+                          return (
+                            <motion.button
+                              key={goal.id}
+                              onClick={() => toggleGoal(focusId, goal.id)}
+                              className={`p-3 rounded-xl text-left transition-all flex items-center gap-2 ${
+                                isSelected
+                                  ? 'bg-[var(--gold-primary)]/10 border border-[var(--gold-primary)] text-[var(--text-primary)]'
+                                  : 'bg-[var(--surface-2)] border border-transparent hover:border-[var(--border-medium)] text-[var(--text-muted)]'
+                              }`}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <GoalIcon size={16} className={isSelected ? 'text-[var(--gold-primary)]' : ''} />
+                              <span className="text-sm font-medium">{goal.label}</span>
+                            </motion.button>
+                          );
+                        })}
                       </div>
                       
                       {/* Custom goal input */}
@@ -753,22 +737,26 @@ export default function OnboardingPage() {
                           onChange={(e) => setCustomGoalInputs({ ...customGoalInputs, [focusId]: e.target.value })}
                           onKeyPress={(e) => e.key === 'Enter' && addCustomGoal(focusId)}
                           placeholder="Or type your own goal..."
-                          className="flex-1 px-4 py-2 bg-slate-50 text-slate-900 border border-slate-200 rounded-lg focus:border-violet-500 text-sm"
+                          className="flex-1 px-4 py-2 bg-[var(--surface-2)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-lg focus:border-[var(--gold-primary)] text-sm placeholder-[var(--text-ghost)]"
                         />
-                        <button
+                        <motion.button
                           onClick={() => addCustomGoal(focusId)}
-                          className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 text-sm"
+                          className="px-4 py-2 bg-[var(--surface-2)] text-[var(--text-muted)] font-medium rounded-lg hover:bg-[var(--surface-card)] flex items-center gap-1"
+                          whileTap={{ scale: 0.95 }}
                         >
-                          + Add
-                        </button>
+                          <Plus size={16} />
+                          Add
+                        </motion.button>
                       </div>
                       
                       {customGoals.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-3">
                           {customGoals.map((g, idx) => (
-                            <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-sm">
+                            <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-[var(--gold-primary)]/10 text-[var(--gold-primary)] rounded-full text-sm">
                               {g}
-                              <button onClick={() => removeCustomGoal(focusId, idx)} className="hover:text-red-500 ml-1">×</button>
+                              <button onClick={() => removeCustomGoal(focusId, idx)} className="hover:text-[var(--status-error)] ml-1">
+                                <X size={12} />
+                              </button>
                             </span>
                           ))}
                         </div>
@@ -776,108 +764,142 @@ export default function OnboardingPage() {
                     </div>
 
                     {/* Obstacle Section */}
-                    <div className="pt-4 border-t border-slate-100">
-                      <p className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-                        🚧 What&apos;s your main obstacle? <span className="text-slate-400 font-normal">(pick one)</span>
+                    <div className="pt-5 border-t border-[var(--border-subtle)]">
+                      <p className="text-sm font-medium text-[var(--text-muted)] mb-3 flex items-center gap-2">
+                        <AlertCircle size={14} />
+                        What&apos;s your main obstacle? <span className="text-[var(--text-ghost)]">(pick one)</span>
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {improvements.map((item) => (
-                          <button
-                            key={item.id}
-                            onClick={() => setChallenge(focusId, item.id)}
-                            className={`p-3 rounded-xl text-left transition-all flex items-center gap-3 ${
-                              data.challenges[focusId] === item.id
-                                ? 'bg-amber-100 border-2 border-amber-400 text-amber-800'
-                                : 'bg-slate-50 hover:bg-slate-100 border border-slate-200'
-                            }`}
-                          >
-                            <span className="text-lg">{item.icon}</span>
-                            <span className={`text-sm font-medium ${data.challenges[focusId] === item.id ? 'text-amber-800' : 'text-slate-700'}`}>
-                              {item.label}
-                            </span>
-                            {data.challenges[focusId] === item.id && <span className="ml-auto text-amber-600">✓</span>}
-                          </button>
-                        ))}
+                        {improvements.map((item) => {
+                          const ItemIcon = item.icon;
+                          const isSelected = data.challenges[focusId] === item.id;
+                          return (
+                            <motion.button
+                              key={item.id}
+                              onClick={() => setChallenge(focusId, item.id)}
+                              className={`p-3 rounded-xl text-left transition-all flex items-center gap-3 ${
+                                isSelected
+                                  ? 'bg-[var(--status-warning)]/10 border border-[var(--status-warning)] text-[var(--text-primary)]'
+                                  : 'bg-[var(--surface-2)] border border-transparent hover:border-[var(--border-medium)] text-[var(--text-muted)]'
+                              }`}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                            >
+                              <ItemIcon size={16} className={isSelected ? 'text-[var(--status-warning)]' : ''} />
+                              <span className="text-sm font-medium">{item.label}</span>
+                              {isSelected && <Check size={14} className="ml-auto text-[var(--status-warning)]" />}
+                            </motion.button>
+                          );
+                        })}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
 
             {/* Progress summary */}
-            <div className="mt-6 p-4 bg-violet-50 rounded-xl text-center">
-              <p className="text-violet-700 font-medium">
+            <motion.div 
+              className="mt-8 p-4 rounded-xl bg-[var(--gold-primary)]/10 border border-[var(--gold-primary)]/30 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <p className="text-[var(--gold-primary)] font-medium">
                 {getTotalGoals()} goal{getTotalGoals() !== 1 ? 's' : ''} • {Object.keys(data.challenges).length} obstacle{Object.keys(data.challenges).length !== 1 ? 's' : ''} identified
               </p>
-            </div>
+            </motion.div>
 
             <div className="flex justify-between mt-10">
-              <button onClick={() => setStep('focus_areas')} className="px-6 py-3 text-slate-500 hover:text-slate-800">
-                ← Back
-              </button>
-              <button
+              <motion.button 
+                onClick={() => setStep('focus_areas')} 
+                className="px-6 py-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-2"
+                whileHover={{ x: -4 }}
+              >
+                <ChevronLeft size={18} />
+                Back
+              </motion.button>
+              <motion.button
                 onClick={() => setStep('commitment')}
                 disabled={getTotalGoals() === 0 || Object.keys(data.challenges).length < data.focusAreas.length}
-                className="px-8 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-xl disabled:opacity-50"
+                className="px-8 py-3 bg-[var(--gold-primary)] text-[var(--obsidian-deepest)] font-medium rounded-xl disabled:opacity-50 flex items-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                Next →
-              </button>
+                Next
+                <ChevronRight size={18} />
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'commitment':
         return (
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-slate-800 mb-2">
+          <motion.div 
+            className="max-w-2xl mx-auto"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-light text-[var(--text-primary)] mb-2">
                 How much time can you commit?
               </h2>
-              <p className="text-slate-600">Be honest — consistency beats intensity</p>
+              <p className="text-[var(--text-ghost)]">Be honest — consistency beats intensity</p>
             </div>
             
             <div className="space-y-6">
-              <div className="bg-white rounded-2xl p-6 border border-slate-200">
-                <label className="font-semibold text-slate-700 block mb-4">Hours per day:</label>
+              <div className="bg-[var(--surface-card)] rounded-2xl p-6 border border-[var(--border-subtle)]">
+                <label className="font-medium text-[var(--text-muted)] block mb-4 flex items-center gap-2">
+                  <Clock size={16} />
+                  Hours per day
+                </label>
                 <div className="flex gap-3">
                   {[0.5, 1, 2, 3, 4].map((hours) => (
-                    <button
+                    <motion.button
                       key={hours}
                       onClick={() => setData({ ...data, hoursPerDay: hours })}
-                      className={`flex-1 py-4 rounded-xl font-bold text-lg transition-all ${
+                      className={`flex-1 py-4 rounded-xl font-medium text-lg transition-all ${
                         data.hoursPerDay === hours
-                          ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          ? 'bg-[var(--gold-primary)] text-[var(--obsidian-deepest)]'
+                          : 'bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-card)]'
                       }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       {hours}h
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 border border-slate-200">
-                <label className="font-semibold text-slate-700 block mb-4">Days per week:</label>
+              <div className="bg-[var(--surface-card)] rounded-2xl p-6 border border-[var(--border-subtle)]">
+                <label className="font-medium text-[var(--text-muted)] block mb-4 flex items-center gap-2">
+                  <Calendar size={16} />
+                  Days per week
+                </label>
                 <div className="flex gap-3">
                   {[3, 4, 5, 6, 7].map((days) => (
-                    <button
+                    <motion.button
                       key={days}
                       onClick={() => setData({ ...data, daysPerWeek: days })}
-                      className={`flex-1 py-4 rounded-xl font-bold text-lg transition-all ${
+                      className={`flex-1 py-4 rounded-xl font-medium text-lg transition-all ${
                         data.daysPerWeek === days
-                          ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          ? 'bg-[var(--gold-primary)] text-[var(--obsidian-deepest)]'
+                          : 'bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-card)]'
                       }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       {days}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 border border-slate-200">
-                <label className="font-semibold text-slate-700 block mb-4">Plan duration:</label>
+              <div className="bg-[var(--surface-card)] rounded-2xl p-6 border border-[var(--border-subtle)]">
+                <label className="font-medium text-[var(--text-muted)] block mb-4 flex items-center gap-2">
+                  <Target size={16} />
+                  Plan duration
+                </label>
                 <div className="grid grid-cols-4 gap-3">
                   {[
                     { days: 30, label: '30 days' },
@@ -885,76 +907,103 @@ export default function OnboardingPage() {
                     { days: 90, label: '90 days' },
                     { days: 180, label: '6 months' },
                   ].map((option) => (
-                    <button
+                    <motion.button
                       key={option.days}
                       onClick={() => setData({ ...data, planDuration: option.days })}
-                      className={`py-4 rounded-xl font-bold transition-all ${
+                      className={`py-4 rounded-xl font-medium transition-all ${
                         data.planDuration === option.days
-                          ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          ? 'bg-[var(--gold-primary)] text-[var(--obsidian-deepest)]'
+                          : 'bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-card)]'
                       }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       {option.label}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
 
-              <div className="p-4 bg-violet-50 rounded-xl text-center">
-                <p className="text-violet-700 font-semibold text-lg">
+              <motion.div 
+                className="p-4 rounded-xl bg-[var(--gold-primary)]/10 border border-[var(--gold-primary)]/30 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <p className="text-[var(--gold-primary)] font-medium text-lg">
                   {data.hoursPerDay * data.daysPerWeek} hours/week for {data.planDuration} days
                 </p>
-              </div>
+              </motion.div>
             </div>
 
             <div className="flex justify-between mt-10">
-              <button onClick={() => setStep('goals_obstacles')} className="px-6 py-3 text-slate-500 hover:text-slate-800">
-                ← Back
-              </button>
-              <button
-                onClick={() => setStep('schedule')}
-                className="px-8 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-xl"
+              <motion.button 
+                onClick={() => setStep('goals_obstacles')} 
+                className="px-6 py-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-2"
+                whileHover={{ x: -4 }}
               >
-                Next →
-              </button>
+                <ChevronLeft size={18} />
+                Back
+              </motion.button>
+              <motion.button
+                onClick={() => setStep('schedule')}
+                className="px-8 py-3 bg-[var(--gold-primary)] text-[var(--obsidian-deepest)] font-medium rounded-xl flex items-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Next
+                <ChevronRight size={18} />
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'schedule':
         return (
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-slate-800 mb-2">
+          <motion.div 
+            className="max-w-2xl mx-auto"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-light text-[var(--text-primary)] mb-2">
                 Tell me about your schedule
               </h2>
-              <p className="text-slate-600">So we can plan around your life</p>
+              <p className="text-[var(--text-ghost)]">So we can plan around your life</p>
             </div>
             
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl p-5 border border-slate-200">
-                  <label className="font-semibold text-slate-700 block mb-2">⏰ Wake up</label>
+                <div className="bg-[var(--surface-card)] rounded-2xl p-5 border border-[var(--border-subtle)]">
+                  <label className="font-medium text-[var(--text-muted)] block mb-2 flex items-center gap-2">
+                    <Sun size={16} />
+                    Wake up
+                  </label>
                   <input
                     type="time"
                     value={data.wakeUpTime}
                     onChange={(e) => setData({ ...data, wakeUpTime: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50 text-slate-900 border-2 border-slate-200 rounded-xl focus:border-violet-500 text-lg"
+                    className="w-full px-4 py-3 bg-[var(--surface-2)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-xl focus:border-[var(--gold-primary)] text-lg"
                   />
                 </div>
-                <div className="bg-white rounded-2xl p-5 border border-slate-200">
-                  <label className="font-semibold text-slate-700 block mb-2">😴 Sleep</label>
+                <div className="bg-[var(--surface-card)] rounded-2xl p-5 border border-[var(--border-subtle)]">
+                  <label className="font-medium text-[var(--text-muted)] block mb-2 flex items-center gap-2">
+                    <Moon size={16} />
+                    Sleep
+                  </label>
                   <input
                     type="time"
                     value={data.sleepTime}
                     onChange={(e) => setData({ ...data, sleepTime: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50 text-slate-900 border-2 border-slate-200 rounded-xl focus:border-violet-500 text-lg"
+                    className="w-full px-4 py-3 bg-[var(--surface-2)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-xl focus:border-[var(--gold-primary)] text-lg"
                   />
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-5 border border-slate-200">
-                <label className="font-semibold text-slate-700 block mb-3">Work schedule:</label>
+              <div className="bg-[var(--surface-card)] rounded-2xl p-5 border border-[var(--border-subtle)]">
+                <label className="font-medium text-[var(--text-muted)] block mb-3 flex items-center gap-2">
+                  <Briefcase size={16} />
+                  Work schedule
+                </label>
                 <div className="grid grid-cols-3 gap-3">
                   {[
                     { id: '9-5', label: '9 to 5' },
@@ -964,150 +1013,173 @@ export default function OnboardingPage() {
                     { id: 'student', label: 'Student' },
                     { id: 'freelance', label: 'Freelance' },
                   ].map((option) => (
-                    <button
+                    <motion.button
                       key={option.id}
                       onClick={() => setData({ ...data, workSchedule: option.id })}
                       className={`py-3 rounded-xl font-medium transition-all ${
                         data.workSchedule === option.id
-                          ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          ? 'bg-[var(--gold-primary)] text-[var(--obsidian-deepest)]'
+                          : 'bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-card)]'
                       }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       {option.label}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl p-5 border border-slate-200">
-                  <label className="font-semibold text-slate-700 block mb-2">Age</label>
+                <div className="bg-[var(--surface-card)] rounded-2xl p-5 border border-[var(--border-subtle)]">
+                  <label className="font-medium text-[var(--text-muted)] block mb-2">Age</label>
                   <input
                     type="number"
                     value={data.age}
                     onChange={(e) => setData({ ...data, age: Number(e.target.value) })}
                     min={16}
                     max={100}
-                    className="w-full px-4 py-3 bg-slate-50 text-slate-900 border-2 border-slate-200 rounded-xl focus:border-violet-500 text-lg"
+                    className="w-full px-4 py-3 bg-[var(--surface-2)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-xl focus:border-[var(--gold-primary)] text-lg"
                   />
                 </div>
-                <div className="bg-white rounded-2xl p-5 border border-slate-200">
-                  <label className="font-semibold text-slate-700 block mb-2">Monthly budget (₹)</label>
+                <div className="bg-[var(--surface-card)] rounded-2xl p-5 border border-[var(--border-subtle)]">
+                  <label className="font-medium text-[var(--text-muted)] block mb-2">Monthly budget (₹)</label>
                   <input
                     type="number"
                     value={data.monthlyBudget}
                     onChange={(e) => setData({ ...data, monthlyBudget: Number(e.target.value) })}
                     step={5000}
-                    className="w-full px-4 py-3 bg-slate-50 text-slate-900 border-2 border-slate-200 rounded-xl focus:border-violet-500 text-lg"
+                    className="w-full px-4 py-3 bg-[var(--surface-2)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-xl focus:border-[var(--gold-primary)] text-lg"
                   />
                 </div>
               </div>
             </div>
 
             <div className="flex justify-between mt-10">
-              <button onClick={() => setStep('commitment')} className="px-6 py-3 text-slate-500 hover:text-slate-800">
-                ← Back
-              </button>
-              <button
-                onClick={() => setStep('preview')}
-                className="px-8 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-xl"
+              <motion.button 
+                onClick={() => setStep('commitment')} 
+                className="px-6 py-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-2"
+                whileHover={{ x: -4 }}
               >
-                Next →
-              </button>
+                <ChevronLeft size={18} />
+                Back
+              </motion.button>
+              <motion.button
+                onClick={() => setStep('preview')}
+                className="px-8 py-3 bg-[var(--gold-primary)] text-[var(--obsidian-deepest)] font-medium rounded-xl flex items-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Next
+                <ChevronRight size={18} />
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'preview':
         return (
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <div className="text-6xl mb-4">✨</div>
-              <h2 className="text-3xl font-bold text-slate-800 mb-2">
+          <motion.div 
+            className="max-w-2xl mx-auto"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <div className="text-center mb-10">
+              <motion.div
+                className="w-20 h-20 rounded-2xl bg-[var(--gold-primary)]/10 flex items-center justify-center mx-auto mb-6"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring' }}
+              >
+                <Sparkles size={40} className="text-[var(--gold-primary)]" />
+              </motion.div>
+              <h2 className="text-3xl font-light text-[var(--text-primary)] mb-2">
                 Here&apos;s What We&apos;ll Build For You
               </h2>
-              <p className="text-slate-600">Based on your inputs, your personalized plan will include:</p>
+              <p className="text-[var(--text-ghost)]">Based on your inputs, your personalized plan will include:</p>
             </div>
             
             <div className="space-y-4 mb-8">
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 flex items-center gap-4">
-                <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center text-2xl">📋</div>
-                <div>
-                  <h3 className="font-bold text-slate-800">Daily Habits</h3>
-                  <p className="text-slate-600 text-sm">3-5 personalized habits tailored to your goals</p>
-                </div>
-              </div>
-              
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-2xl">🌅</div>
-                <div>
-                  <h3 className="font-bold text-slate-800">Morning & Evening Routines</h3>
-                  <p className="text-slate-600 text-sm">Optimized for your wake time ({data.wakeUpTime}) and sleep ({data.sleepTime})</p>
-                </div>
-              </div>
-              
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl">🎯</div>
-                <div>
-                  <h3 className="font-bold text-slate-800">Weekly Goals</h3>
-                  <p className="text-slate-600 text-sm">Achievable milestones to keep you motivated</p>
-                </div>
-              </div>
-              
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-2xl">🏆</div>
-                <div>
-                  <h3 className="font-bold text-slate-800">{data.planDuration}-Day Milestones</h3>
-                  <p className="text-slate-600 text-sm">Progress checkpoints at Week 1, 4, and {Math.floor(data.planDuration / 7)}</p>
-                </div>
-              </div>
-              
-              <div className="bg-white rounded-2xl p-5 border border-slate-200 flex items-center gap-4">
-                <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center text-2xl">💡</div>
-                <div>
-                  <h3 className="font-bold text-slate-800">AI Coaching Tips</h3>
-                  <p className="text-slate-600 text-sm">Personalized advice based on your obstacles</p>
-                </div>
-              </div>
+              {[
+                { icon: Calendar, title: 'Daily Habits', desc: '3-5 personalized habits tailored to your goals', color: 'var(--gold-primary)' },
+                { icon: Sun, title: 'Morning & Evening Routines', desc: `Optimized for your wake time (${data.wakeUpTime}) and sleep (${data.sleepTime})`, color: 'var(--status-warning)' },
+                { icon: Target, title: 'Weekly Goals', desc: 'Achievable milestones to keep you motivated', color: 'var(--status-success)' },
+                { icon: TrendingUp, title: `${data.planDuration}-Day Milestones`, desc: `Progress checkpoints at Week 1, 4, and ${Math.floor(data.planDuration / 7)}`, color: 'var(--status-info)' },
+                { icon: Brain, title: 'AI Coaching Tips', desc: 'Personalized advice based on your obstacles', color: 'var(--status-error)' },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.title}
+                  className="bg-[var(--surface-card)] rounded-2xl p-5 border border-[var(--border-subtle)] flex items-center gap-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${item.color}20` }}
+                  >
+                    <item.icon size={24} style={{ color: item.color }} />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-[var(--text-primary)]">{item.title}</h3>
+                    <p className="text-[var(--text-ghost)] text-sm">{item.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
 
-            <div className="p-4 bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl text-center mb-8">
-              <p className="text-violet-700 font-medium">
-                📊 {data.hoursPerDay}h/day • {data.daysPerWeek} days/week • {data.planDuration} days
+            <motion.div 
+              className="p-4 rounded-xl bg-[var(--gold-primary)]/10 border border-[var(--gold-primary)]/30 text-center mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <p className="text-[var(--gold-primary)] font-medium">
+                {data.hoursPerDay}h/day • {data.daysPerWeek} days/week • {data.planDuration} days
               </p>
-            </div>
+            </motion.div>
 
             <div className="flex justify-between">
-              <button onClick={() => setStep('schedule')} className="px-6 py-3 text-slate-500 hover:text-slate-800">
-                ← Back
-              </button>
-              <button
+              <motion.button 
+                onClick={() => setStep('schedule')} 
+                className="px-6 py-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-2"
+                whileHover={{ x: -4 }}
+              >
+                <ChevronLeft size={18} />
+                Back
+              </motion.button>
+              <motion.button
                 onClick={() => {
-                  // Auto-select smart defaults for tracking
                   const smartDefaults = getSmartDefaultTracking();
                   if (data.trackingAreas.length === 0) {
                     setData({ ...data, trackingAreas: smartDefaults });
                   }
                   setStep('tracking');
                 }}
-                className="px-8 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-xl"
+                className="px-8 py-3 bg-[var(--gold-primary)] text-[var(--obsidian-deepest)] font-medium rounded-xl flex items-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                Customize Tracking →
-              </button>
+                Customize Tracking
+                <ChevronRight size={18} />
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'tracking':
         return (
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-slate-800 mb-2">
+          <motion.div 
+            className="max-w-3xl mx-auto"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-light text-[var(--text-primary)] mb-2">
                 Customize Your Tracking
               </h2>
-              <p className="text-slate-600">We&apos;ve selected recommended metrics. Adjust as needed.</p>
+              <p className="text-[var(--text-ghost)]">We&apos;ve selected recommended metrics. Adjust as needed.</p>
               {data.trackingAreas.length > 0 && (
-                <p className="text-sm text-green-600 mt-2">✓ {data.trackingAreas.length} metrics selected</p>
+                <p className="text-sm text-[var(--status-success)] mt-2">{data.trackingAreas.length} metrics selected</p>
               )}
             </div>
             
@@ -1115,37 +1187,49 @@ export default function OnboardingPage() {
               {data.focusAreas.map((focusId) => {
                 const area = focusAreaOptions.find(a => a.id === focusId)!;
                 const tracking = trackingByFocus[focusId] || [];
+                const IconComponent = area.icon;
 
                 return (
-                  <div key={focusId} className="bg-white rounded-2xl p-5 border border-slate-200">
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-2xl">{area.icon}</span>
-                      <h3 className="font-bold text-slate-800">{area.label} Metrics</h3>
+                  <div key={focusId} className="bg-[var(--surface-card)] rounded-2xl p-5 border border-[var(--border-subtle)]">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div 
+                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: `${area.color}20` }}
+                      >
+                        <IconComponent size={20} style={{ color: area.color }} />
+                      </div>
+                      <h3 className="font-medium text-[var(--text-primary)]">{area.label} Metrics</h3>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {tracking.map((track) => (
-                        <button
-                          key={track.id}
-                          onClick={() => toggleTracking(track.id)}
-                          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
-                            data.trackingAreas.includes(track.id)
-                              ? `bg-gradient-to-r ${area.color} text-white shadow-md`
-                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                          }`}
-                        >
-                          <span>{track.icon}</span>
-                          <span>{track.label}</span>
-                          {data.trackingAreas.includes(track.id) && <span>✓</span>}
-                        </button>
-                      ))}
+                      {tracking.map((track) => {
+                        const TrackIcon = track.icon;
+                        const isSelected = data.trackingAreas.includes(track.id);
+                        return (
+                          <motion.button
+                            key={track.id}
+                            onClick={() => toggleTracking(track.id)}
+                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
+                              isSelected
+                                ? 'bg-[var(--gold-primary)] text-[var(--obsidian-deepest)]'
+                                : 'bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-card)]'
+                            }`}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <TrackIcon size={14} />
+                            {track.label}
+                            {isSelected && <Check size={12} />}
+                          </motion.button>
+                        );
+                      })}
                     </div>
                   </div>
                 );
               })}
 
               {/* Custom tracking */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
-                <p className="text-sm font-medium text-slate-700 mb-3">Track something else?</p>
+              <div className="bg-[var(--surface-2)] rounded-2xl p-4 border border-[var(--border-subtle)]">
+                <p className="text-sm font-medium text-[var(--text-muted)] mb-3">Track something else?</p>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -1153,18 +1237,24 @@ export default function OnboardingPage() {
                     onChange={(e) => setCustomTrackingInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addCustomTracking()}
                     placeholder="E.g., Caffeine, Gratitude..."
-                    className="flex-1 px-4 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl"
+                    className="flex-1 px-4 py-3 bg-[var(--surface-card)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-xl placeholder-[var(--text-ghost)]"
                   />
-                  <button onClick={addCustomTracking} className="px-4 py-3 bg-violet-100 text-violet-700 font-semibold rounded-xl hover:bg-violet-200">
+                  <motion.button 
+                    onClick={addCustomTracking} 
+                    className="px-4 py-3 bg-[var(--gold-primary)]/10 text-[var(--gold-primary)] font-medium rounded-xl hover:bg-[var(--gold-primary)]/20"
+                    whileTap={{ scale: 0.95 }}
+                  >
                     Add
-                  </button>
+                  </motion.button>
                 </div>
                 {data.customTracking.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {data.customTracking.map((t, idx) => (
-                      <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-sm">
+                      <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-[var(--gold-primary)]/10 text-[var(--gold-primary)] rounded-full text-sm">
                         {t}
-                        <button onClick={() => setData({ ...data, customTracking: data.customTracking.filter((_, i) => i !== idx) })} className="hover:text-red-500 ml-1">×</button>
+                        <button onClick={() => setData({ ...data, customTracking: data.customTracking.filter((_, i) => i !== idx) })} className="hover:text-[var(--status-error)] ml-1">
+                          <X size={12} />
+                        </button>
                       </span>
                     ))}
                   </div>
@@ -1173,62 +1263,95 @@ export default function OnboardingPage() {
             </div>
 
             <div className="flex justify-between mt-10">
-              <button onClick={() => setStep('preview')} className="px-6 py-3 text-slate-500 hover:text-slate-800">
-                ← Back
-              </button>
-              <button
-                onClick={handleGeneratePlan}
-                className="px-8 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-xl"
+              <motion.button 
+                onClick={() => setStep('preview')} 
+                className="px-6 py-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-2"
+                whileHover={{ x: -4 }}
               >
-                Generate My Plan ✨
-              </button>
+                <ChevronLeft size={18} />
+                Back
+              </motion.button>
+              <motion.button
+                onClick={handleGeneratePlan}
+                className="px-8 py-3 bg-[var(--gold-primary)] text-[var(--obsidian-deepest)] font-medium rounded-xl flex items-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Generate My Plan
+                <Sparkles size={18} />
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         );
 
       case 'generating':
         return (
-          <div className="text-center py-12">
-            <div className="text-7xl mb-6 animate-bounce">🤖</div>
-            <h2 className="text-3xl font-bold text-slate-800 mb-4">Creating Your Plan...</h2>
-            <p className="text-slate-600">Analyzing your {data.focusAreas.length} focus area(s) and {getTotalGoals()} goal(s)</p>
+          <div className="text-center py-20">
+            <motion.div
+              className="w-24 h-24 rounded-3xl bg-[var(--gold-primary)]/10 flex items-center justify-center mx-auto mb-8"
+              animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Brain size={48} className="text-[var(--gold-primary)]" />
+            </motion.div>
+            <h2 className="text-3xl font-light text-[var(--text-primary)] mb-4">Creating Your Plan...</h2>
+            <p className="text-[var(--text-ghost)]">Analyzing your {data.focusAreas.length} focus area(s) and {getTotalGoals()} goal(s)</p>
           </div>
         );
 
       case 'review':
         return (
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-3xl font-bold text-slate-800 mb-2">
+          <motion.div 
+            className="max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="text-center mb-10">
+              <motion.div
+                className="w-24 h-24 rounded-3xl bg-[var(--status-success)]/10 flex items-center justify-center mx-auto mb-6"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring' }}
+              >
+                <Sparkles size={48} className="text-[var(--status-success)]" />
+              </motion.div>
+              <h2 className="text-3xl font-light text-[var(--text-primary)] mb-2">
                 Your Plan is Ready{userName ? `, ${userName}` : ''}!
               </h2>
-              <p className="text-lg text-violet-600 font-medium mt-3">
+              <p className="text-lg text-[var(--gold-primary)] font-medium mt-3">
                 You&apos;ve just taken a powerful step toward becoming the best version of yourself.
               </p>
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-700 rounded-xl">
-                ❌ {error}
-              </div>
+              <motion.div 
+                className="mb-6 p-4 bg-[var(--status-error)]/10 border border-[var(--status-error)]/30 text-[var(--status-error)] rounded-xl flex items-center gap-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <AlertCircle size={20} />
+                {error}
+              </motion.div>
             )}
 
             {generatedPlan && (
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 mb-6">
+              <div className="bg-[var(--surface-card)] rounded-2xl p-6 border border-[var(--border-subtle)] mb-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-slate-800">{generatedPlan.planName}</h3>
-                  <span className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-sm font-medium">
+                  <h3 className="text-xl font-medium text-[var(--text-primary)]">{generatedPlan.planName}</h3>
+                  <span className="px-3 py-1 bg-[var(--gold-primary)]/10 text-[var(--gold-primary)] rounded-full text-sm font-medium">
                     {generatedPlan.duration} days
                   </span>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-slate-700 mb-2">📋 Daily Habits</h4>
+                    <h4 className="font-medium text-[var(--text-muted)] mb-2 flex items-center gap-2">
+                      <Calendar size={16} />
+                      Daily Habits
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {generatedPlan.dailyHabits?.slice(0, 6).map((habit: any, idx: number) => (
-                        <span key={idx} className="px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm flex items-center gap-2">
+                        <span key={idx} className="px-3 py-2 bg-[var(--surface-2)] text-[var(--text-muted)] rounded-lg text-sm flex items-center gap-2">
                           <span>{habit.icon}</span>
                           <span>{habit.name}</span>
                         </span>
@@ -1237,19 +1360,23 @@ export default function OnboardingPage() {
                   </div>
 
                   <div>
-                    <h4 className="font-semibold text-slate-700 mb-2">🎯 Weekly Goals</h4>
+                    <h4 className="font-medium text-[var(--text-muted)] mb-2 flex items-center gap-2">
+                      <Target size={16} />
+                      Weekly Goals
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {generatedPlan.weeklyGoals?.map((goal: string, idx: number) => (
-                        <span key={idx} className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-sm">
+                        <span key={idx} className="px-3 py-1 bg-[var(--gold-primary)]/10 text-[var(--gold-primary)] rounded-full text-sm">
                           {goal}
                         </span>
                       ))}
                     </div>
                   </div>
 
-                  <div className="p-4 bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl">
-                    <p className="text-violet-800 text-sm">
-                      <span className="font-bold">💡 Coach:</span> {generatedPlan.coachingTip}
+                  <div className="p-4 bg-[var(--gold-primary)]/10 border border-[var(--gold-primary)]/30 rounded-xl">
+                    <p className="text-[var(--gold-primary)] text-sm flex items-center gap-2">
+                      <Brain size={16} />
+                      <span className="font-medium">Coach:</span> {generatedPlan.coachingTip}
                     </p>
                   </div>
                 </div>
@@ -1257,42 +1384,57 @@ export default function OnboardingPage() {
             )}
 
             {/* Emotional encouragement */}
-            <div className="mb-6 p-5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl text-center">
-              <p className="text-green-700 font-medium">
-                💪 {data.planDuration} days from now, you&apos;ll look back and thank yourself for starting today.
+            <motion.div 
+              className="mb-6 p-5 bg-[var(--status-success)]/10 border border-[var(--status-success)]/30 rounded-2xl text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <p className="text-[var(--status-success)] font-medium">
+                {data.planDuration} days from now, you&apos;ll look back and thank yourself for starting today.
               </p>
-            </div>
+            </motion.div>
 
             <div className="space-y-3">
-              <button
+              <motion.button
                 onClick={savePlanAndContinue}
                 disabled={saving}
-                className="w-full px-6 py-5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-lg rounded-xl hover:from-violet-700 hover:to-indigo-700 transition disabled:opacity-50 shadow-lg shadow-violet-200"
+                className="w-full px-6 py-5 bg-[var(--gold-primary)] text-[var(--obsidian-deepest)] font-medium text-lg rounded-xl hover:bg-[var(--gold-primary)]/90 transition disabled:opacity-50 flex items-center justify-center gap-3"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
               >
-                {saving ? '💾 Saving...' : '🚀 Start Day 1'}
-              </button>
+                {saving ? (
+                  <>Saving...</>
+                ) : (
+                  <>
+                    <Rocket size={20} />
+                    Start Day 1
+                  </>
+                )}
+              </motion.button>
               <div className="flex gap-3">
-                <button
+                <motion.button
                   onClick={() => router.push('/onboarding/edit-plan')}
-                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-medium rounded-xl hover:bg-slate-200 transition text-sm"
+                  className="flex-1 px-4 py-3 bg-[var(--surface-card)] text-[var(--text-muted)] font-medium rounded-xl hover:bg-[var(--surface-2)] transition text-sm flex items-center justify-center gap-2"
+                  whileTap={{ scale: 0.98 }}
                 >
-                  ✏️ Edit Plan
-                </button>
-                <button
+                  Edit Plan
+                </motion.button>
+                <motion.button
                   onClick={() => {
-                    // Simple browser notification permission request
                     if ('Notification' in window) {
                       Notification.requestPermission();
                     }
                     alert('Daily reminders enabled! We\'ll notify you at your wake time.');
                   }}
-                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-medium rounded-xl hover:bg-slate-200 transition text-sm"
+                  className="flex-1 px-4 py-3 bg-[var(--surface-card)] text-[var(--text-muted)] font-medium rounded-xl hover:bg-[var(--surface-2)] transition text-sm flex items-center justify-center gap-2"
+                  whileTap={{ scale: 0.98 }}
                 >
-                  🔔 Set Reminder
-                </button>
+                  Set Reminder
+                </motion.button>
               </div>
             </div>
-          </div>
+          </motion.div>
         );
 
       default:
@@ -1301,32 +1443,38 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50 to-indigo-50">
+    <div className="min-h-screen bg-[var(--obsidian-deepest)]">
+      <AppHeader showBack={step !== 'welcome'} backHref="/onboarding/template" variant="app" />
+      
       {step !== 'welcome' && step !== 'generating' && step !== 'review' && (
-        <div className="fixed top-0 left-0 right-0 z-50">
+        <div className="fixed top-16 left-0 right-0 z-40">
           {/* Progress bar */}
-          <div className="h-1 bg-slate-200">
-            <div 
-              className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-500"
-              style={{ width: `${progress}%` }}
+          <div className="h-1 bg-[var(--surface-2)]">
+            <motion.div 
+              className="h-full bg-[var(--gold-primary)]"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5 }}
             />
           </div>
-          {/* Step counter and time estimate */}
-          <div className="bg-white/80 backdrop-blur-sm border-b border-slate-100 px-4 py-2">
+          {/* Step counter */}
+          <div className="bg-[var(--obsidian-deepest)]/80 backdrop-blur-sm border-b border-[var(--border-subtle)] px-4 py-2">
             <div className="max-w-5xl mx-auto flex justify-between items-center text-sm">
-              <span className="text-slate-600 font-medium">
+              <span className="text-[var(--text-muted)]">
                 Step {currentIndex} of {steps.length - 2}
               </span>
-              <span className="text-violet-600 font-medium">
-                {getTimeEstimate()}
+              <span className="text-[var(--gold-primary)]">
+                ~{Math.ceil((steps.length - 1 - currentIndex) * 0.3)} min left
               </span>
             </div>
           </div>
         </div>
       )}
 
-      <div className={`max-w-5xl mx-auto px-4 ${step !== 'welcome' && step !== 'generating' && step !== 'review' ? 'pt-20 pb-12' : 'py-12'}`}>
-        {renderStep()}
+      <div className={`max-w-5xl mx-auto px-4 ${step !== 'welcome' && step !== 'generating' && step !== 'review' ? 'pt-32 pb-12' : 'pt-20 pb-12'}`}>
+        <AnimatePresence mode="wait">
+          {renderStep()}
+        </AnimatePresence>
       </div>
     </div>
   );

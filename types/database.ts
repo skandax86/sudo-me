@@ -11,6 +11,11 @@ export type AccountType = 'bank' | 'cash' | 'wallet' | 'credit';
 export type WorkoutType = 'gym' | 'cardio' | 'yoga' | 'swim' | 'rest' | 'calisthenics';
 export type GymProgram = 'push' | 'pull' | 'legs' | 'full' | 'upper' | 'lower';
 
+// Challenge System
+export type TemplateType = '75_hard' | '75_soft' | 'custom';
+export type ChallengeType = '75_hard' | '75_soft';
+export type ChallengeStatus = 'active' | 'completed' | 'failed' | 'paused';
+
 // ============================================
 // USER & PROFILE
 // ============================================
@@ -25,9 +30,12 @@ export interface Profile {
   target_weight: number | null;
   salary: number | null;
   current_streak: number;
+  longest_streak: number;
   total_xp: number;
   level: string;
   timezone: string;
+  // Template & Challenge
+  template_type: TemplateType;
   // Onboarding & Personalization
   onboarding_complete: boolean;
   preferences: UserPreferences | null;
@@ -108,6 +116,8 @@ export interface UserDomain {
 // HABITS (Flexible, user-defined)
 // ============================================
 
+export type HabitFrequency = 'daily' | 'weekly' | 'monthly';
+
 export interface Habit {
   id: string;
   user_id: string;
@@ -115,6 +125,8 @@ export interface Habit {
   icon: string;
   weight: number;
   domain: Domain;
+  frequency: HabitFrequency;
+  target_per_period: number; // e.g., 4 times per week
   active: boolean;
   sort_order: number;
   created_at: string;
@@ -212,6 +224,118 @@ export interface InvestmentPortfolio {
   emergency_fund_balance: number;
   created_at: string;
   updated_at: string;
+}
+
+// New Investment Tables
+export type InvestmentCategory = 'etf' | 'stock' | 'mutual_fund' | 'gold' | 'silver' | 'crypto' | 'fd' | 'rd' | 'nps' | 'ppf' | 'other';
+export type RiskLevel = 'low' | 'medium' | 'high';
+export type InvestmentTransactionType = 'buy' | 'sell' | 'dividend' | 'sip';
+export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+export type BudgetParentCategory = 'essential_needs' | 'desires_wants' | 'investments' | 'savings_emergency' | 'short_mid_goals';
+
+export interface Investment {
+  id: string;
+  user_id: string;
+  name: string;
+  symbol: string | null;
+  category: InvestmentCategory;
+  risk_level: RiskLevel;
+  platform: string | null;
+  units: number;
+  avg_buy_price: number;
+  current_price: number;
+  invested_amount: number;
+  current_value: number;
+  is_sip: boolean;
+  sip_amount: number | null;
+  sip_date: number | null; // Day of month
+  notes: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvestmentTransaction {
+  id: string;
+  user_id: string;
+  investment_id: string;
+  transaction_date: string;
+  type: InvestmentTransactionType;
+  units: number;
+  price_per_unit: number;
+  total_amount: number;
+  fees: number;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface RecurringTransaction {
+  id: string;
+  user_id: string;
+  name: string;
+  type: TransactionType | 'investment';
+  category: string;
+  subcategory: string | null;
+  amount: number;
+  frequency: RecurringFrequency;
+  day_of_period: number | null;
+  account_id: string | null;
+  investment_id: string | null;
+  start_date: string;
+  end_date: string | null;
+  next_due: string | null;
+  is_active: boolean;
+  auto_log: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetPlan {
+  id: string;
+  user_id: string;
+  year: number;
+  month: number;
+  essential_needs: number;
+  desires_wants: number;
+  investments: number;
+  savings_emergency: number;
+  short_mid_goals: number;
+  total_income: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetSubcategory {
+  id: string;
+  user_id: string;
+  budget_plan_id: string | null;
+  parent_category: BudgetParentCategory;
+  name: string;
+  planned_amount: number;
+  spent_amount: number;
+  notes: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface NetWorthSnapshot {
+  id: string;
+  user_id: string;
+  snapshot_date: string;
+  bank_balance: number;
+  cash: number;
+  investments_value: number;
+  other_assets: number;
+  loans: number;
+  credit_card_debt: number;
+  other_liabilities: number;
+  total_assets: number;
+  total_liabilities: number;
+  net_worth: number;
+  notes: string | null;
+  created_at: string;
 }
 
 // ============================================
@@ -440,12 +564,94 @@ export interface WeeklyScorecard {
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'coaching_tip' | 'budget_alert' | 'streak_milestone' | 'goal_reminder';
+  type: 'coaching_tip' | 'budget_alert' | 'streak_milestone' | 'goal_reminder' | 'achievement';
   title: string;
   message: string;
   is_read: boolean;
   created_at: string;
 }
+
+// ============================================
+// CHALLENGE SYSTEM
+// ============================================
+
+export interface ChallengeSession {
+  id: string;
+  user_id: string;
+  challenge_type: ChallengeType;
+  start_date: string;
+  current_day: number;
+  status: ChallengeStatus;
+  failed_at: string | null;
+  completed_at: string | null;
+  restart_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChallengeDailyLog {
+  id: string;
+  session_id: string;
+  user_id: string;
+  date: string;
+  day_number: number;
+  // 75 Hard tasks
+  workout_1_done: boolean;
+  workout_2_outdoor_done: boolean;
+  diet_followed: boolean;
+  water_goal_done: boolean;
+  reading_done: boolean;
+  progress_photo: boolean;
+  no_alcohol: boolean;
+  // 75 Soft tasks
+  reflection_done: boolean;
+  // Status
+  all_tasks_complete: boolean;
+  passed: boolean | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ActiveChallenge {
+  active: boolean;
+  session_id?: string;
+  challenge_type?: ChallengeType;
+  start_date?: string;
+  current_day?: number;
+  total_days?: number;
+  restart_count?: number;
+  today_log?: {
+    workout_1_done: boolean;
+    workout_2_outdoor_done: boolean;
+    diet_followed: boolean;
+    water_goal_done: boolean;
+    reading_done: boolean;
+    progress_photo: boolean;
+    no_alcohol: boolean;
+    reflection_done: boolean;
+    all_tasks_complete: boolean;
+  };
+}
+
+// Challenge task definitions
+export interface ChallengeTask {
+  id: string;
+  label: string;
+  icon: string;
+  required_for: ChallengeType[];
+  field: keyof ChallengeDailyLog;
+}
+
+export const CHALLENGE_TASKS: ChallengeTask[] = [
+  { id: 'workout_1', label: 'Workout 1', icon: '🏋️', required_for: ['75_hard', '75_soft'], field: 'workout_1_done' },
+  { id: 'workout_2_outdoor', label: 'Workout 2 (Outdoor)', icon: '🏃', required_for: ['75_hard'], field: 'workout_2_outdoor_done' },
+  { id: 'diet', label: 'Follow Diet', icon: '🥗', required_for: ['75_hard', '75_soft'], field: 'diet_followed' },
+  { id: 'water', label: 'Hydration Goal', icon: '💧', required_for: ['75_hard', '75_soft'], field: 'water_goal_done' },
+  { id: 'reading', label: 'Read 10 Pages', icon: '📖', required_for: ['75_hard', '75_soft'], field: 'reading_done' },
+  { id: 'photo', label: 'Progress Photo', icon: '📸', required_for: ['75_hard'], field: 'progress_photo' },
+  { id: 'no_alcohol', label: 'No Alcohol', icon: '🚫', required_for: ['75_hard'], field: 'no_alcohol' },
+  { id: 'reflection', label: 'Daily Reflection', icon: '✍️', required_for: ['75_soft'], field: 'reflection_done' },
+];
 
 // ============================================
 // API RESPONSE TYPES

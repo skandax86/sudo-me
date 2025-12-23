@@ -1,12 +1,30 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { 
+  Briefcase, 
+  Target, 
+  Award, 
+  TrendingUp,
+  Code,
+  Globe,
+  ArrowRight,
+  CheckCircle2,
+  Clock
+} from 'lucide-react';
 import { isSupabaseReady, getSupabaseClient } from '@/lib/supabase/client';
 import { getDomainConfig } from '@/lib/domains';
-import { DomainDashboard, FeatureSection, EmptyDomainState, ComingSoon } from '@/components/dashboard/DomainDashboard';
-import { MetricWidget } from '@/components/dashboard/widgets/BaseWidget';
+import { DomainDashboard, EmptyDomainState } from '@/components/dashboard/DomainDashboard';
+import { ZenCard, ZenFade, ZenNumber, ZenProgress } from '@/components/zen';
+import { 
+  DailyActionsLayer, 
+  WeeklyRhythmLayer, 
+  ActiveProgramsLayer,
+  LongTermVisionLayer 
+} from '@/components/layers';
 import { Goal, GeneratedPlan } from '@/types/database';
 
 const domainConfig = getDomainConfig('career');
@@ -17,12 +35,28 @@ interface CareerData {
   totalLeetCode: number;
 }
 
+// ============================================================================
+// MAIN PAGE
+// ============================================================================
+
 export default function CareerDashboard() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<CareerData | null>(null);
+  const [dailyActions, setDailyActions] = useState({
+    leetcode: false,
+    apply: false,
+    network: false,
+    learn: false,
+  });
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
+    // Reset state on mount
+    setLoading(true);
+    setData(null);
+    setDailyActions({ leetcode: false, apply: false, network: false, learn: false });
+    
     async function fetchData() {
       if (!isSupabaseReady()) {
         router.push('/setup');
@@ -43,14 +77,14 @@ export default function CareerDashboard() {
           .from('profiles')
           .select('generated_plan')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         // Fetch career goals
         const { data: goals } = await supabase
           .from('goals')
           .select('*')
           .eq('user_id', user.id)
-          .eq('category', 'Career')
+          .eq('domain', 'career')
           .order('created_at', { ascending: false });
 
         // Fetch total leetcode
@@ -74,18 +108,14 @@ export default function CareerDashboard() {
     }
 
     fetchData();
-  }, [router]);
+  }, [pathname]);
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="p-8 bg-[var(--background)] min-h-screen">
         <div className="animate-pulse">
-          <div className="h-40 bg-slate-200 rounded-2xl mb-6" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-slate-200 rounded-2xl" />
-            ))}
-          </div>
+          <div className="h-48 bg-[var(--surface-card)] rounded-[28px] mb-6" />
+          <div className="h-60 bg-[var(--surface-card)] rounded-[28px] mb-6" />
         </div>
       </div>
     );
@@ -103,147 +133,229 @@ export default function CareerDashboard() {
     );
   }
 
-  const { careerGoals, plan, totalLeetCode } = data;
+  const { careerGoals, totalLeetCode } = data;
   const activeGoals = careerGoals.filter(g => g.status === 'active');
   const completedGoals = careerGoals.filter(g => g.status === 'completed');
+  const leetCodeTarget = 300;
+  const isLeetCodeElite = totalLeetCode >= 100;
+
+  // ============================================================================
+  // LAYER 1: DAILY ACTIONS
+  // "What do I do TODAY?"
+  // ============================================================================
+  const layer1Actions = [
+    { 
+      id: 'leetcode', 
+      label: 'Solve 1+ LeetCode problem', 
+      icon: <Code size={18} className="text-[var(--text-muted)]" />,
+      completed: dailyActions.leetcode 
+    },
+    { 
+      id: 'apply', 
+      label: 'Apply to 1 job (if actively looking)', 
+      icon: <Briefcase size={18} className="text-[var(--text-muted)]" />,
+      completed: dailyActions.apply 
+    },
+    { 
+      id: 'network', 
+      label: 'Connect with 1 person', 
+      icon: <Globe size={18} className="text-[var(--text-muted)]" />,
+      completed: dailyActions.network 
+    },
+    { 
+      id: 'learn', 
+      label: 'Learn something new', 
+      icon: <TrendingUp size={18} className="text-[var(--text-muted)]" />,
+      completed: dailyActions.learn 
+    },
+  ];
+
+  // ============================================================================
+  // LAYER 2: WEEKLY RHYTHM
+  // "What am I building THIS WEEK?"
+  // ============================================================================
+  const layer2Rhythms = [
+    { 
+      id: 'leetcode', 
+      label: 'LeetCode Problems', 
+      icon: '💻',
+      current: Math.min(totalLeetCode % 21, 21), // Weekly progress
+      target: 21,
+      unit: 'solved',
+      frequency: '3 per day'
+    },
+    { 
+      id: 'certStudy', 
+      label: 'Certification Study', 
+      icon: '📚',
+      current: 0, // Would track from study logs
+      target: 5,
+      unit: 'hours',
+      frequency: '5 hours/week'
+    },
+    { 
+      id: 'applications', 
+      label: 'Job Applications', 
+      icon: '📝',
+      current: 0, // Would track from applications
+      target: 5,
+      unit: 'apps',
+      frequency: '5 per week'
+    },
+  ];
+
+  // ============================================================================
+  // LAYER 3: ACTIVE PROGRAMS
+  // "What am I building over MONTHS?"
+  // ============================================================================
+  const layer3Programs = [
+    {
+      id: 'jobSwitch',
+      name: 'Job Switch / Move Abroad',
+      icon: '🌍',
+      category: 'Career Transition',
+      startDate: 'Jan 2025',
+      currentLevel: 'Preparing',
+      nextMilestone: 'Get 20LPA offer or Amsterdam role',
+      progressPercent: 25,
+    },
+    {
+      id: 'aws',
+      name: 'AWS Certification',
+      icon: '☁️',
+      category: 'Cloud Computing',
+      startDate: 'Jan 2025',
+      currentLevel: 'Studying',
+      nextMilestone: 'Pass Solutions Architect exam',
+      progressPercent: 30,
+    },
+    {
+      id: 'databricks',
+      name: 'Databricks Certification',
+      icon: '🧱',
+      category: 'Data Engineering',
+      startDate: 'Feb 2025',
+      currentLevel: 'Planned',
+      nextMilestone: 'Start course',
+      progressPercent: 10,
+    },
+  ];
+
+  // ============================================================================
+  // LAYER 4: LONG-TERM VISION
+  // "Why am I doing all this?"
+  // ============================================================================
+  const layer4Goals = [
+    {
+      id: 'jobSwitch',
+      title: 'Switch job: 20LPA or Amsterdam',
+      icon: '🎯',
+      timeframe: 'short' as const,
+      domain: 'Career',
+      progress: 25,
+    },
+    {
+      id: 'leetcode',
+      title: `Solve ${leetCodeTarget} LeetCode problems`,
+      icon: '💻',
+      timeframe: 'short' as const,
+      domain: 'Technical Skills',
+      progress: Math.min((totalLeetCode / leetCodeTarget) * 100, 100),
+    },
+    {
+      id: 'certs',
+      title: 'AWS + Databricks certifications',
+      icon: '🏅',
+      timeframe: 'short' as const,
+      domain: 'Credentials',
+      progress: 20,
+    },
+    {
+      id: 'senior',
+      title: 'Become a senior engineer',
+      icon: '🚀',
+      timeframe: 'mid' as const,
+      domain: 'Role',
+    },
+    {
+      id: 'financial',
+      title: 'Financial independence through career',
+      icon: '💎',
+      timeframe: 'long' as const,
+      domain: 'Life Goal',
+    },
+  ];
+
+  // Handler for toggling daily actions
+  const handleActionToggle = (id: string) => {
+    setDailyActions(prev => ({
+      ...prev,
+      [id]: !prev[id as keyof typeof prev],
+    }));
+  };
 
   return (
-    <DomainDashboard
-      config={domainConfig}
-      todayProgress={
-        activeGoals.length > 0
-          ? { current: completedGoals.length, total: careerGoals.length }
-          : undefined
-      }
-    >
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <MetricWidget
-          title="Active Goals"
-          value={activeGoals.length}
-          icon="🎯"
-          subtitle="In progress"
-        />
-        <MetricWidget
-          title="Completed"
-          value={completedGoals.length}
-          icon="✅"
-          subtitle="Goals achieved"
-        />
-        <MetricWidget
-          title="LeetCode"
-          value={totalLeetCode}
-          icon="💻"
-          subtitle="Problems solved"
-        />
-        <MetricWidget
-          title="Skills"
-          value="Coming"
-          icon="🛠️"
-          subtitle="Soon"
-        />
-      </div>
-
-      {/* Active Goals */}
-      <FeatureSection
-        title="Active Career Goals"
-        actionHref="/dashboard/goals"
-        actionLabel="Manage"
-      >
-        {activeGoals.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activeGoals.map((goal) => {
-              const progress = goal.target_value
-                ? Math.round((goal.current_value / goal.target_value) * 100)
-                : 0;
-
-              return (
-                <div
-                  key={goal.id}
-                  className="bg-white rounded-2xl p-6 border border-slate-100"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="font-bold text-slate-800">{goal.title}</h3>
-                      {goal.description && (
-                        <p className="text-sm text-slate-500 mt-1">{goal.description}</p>
-                      )}
-                    </div>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      goal.timeframe === 'short'
-                        ? 'bg-green-100 text-green-700'
-                        : goal.timeframe === 'mid'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-purple-100 text-purple-700'
-                    }`}>
-                      {goal.timeframe}
-                    </span>
-                  </div>
-
-                  {goal.target_value && (
-                    <>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="text-slate-500">Progress</span>
-                        <span className="font-medium text-slate-700">
-                          {goal.current_value} / {goal.target_value} {goal.unit || ''}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
-                          style={{ width: `${Math.min(progress, 100)}%` }}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {goal.due_date && (
-                    <p className="text-xs text-slate-400 mt-3">
-                      Due: {new Date(goal.due_date).toLocaleDateString()}
-                    </p>
-                  )}
+    <DomainDashboard config={domainConfig}>
+      {/* Hero Stats */}
+      <ZenFade>
+        <ZenCard className="mb-8 p-6" variant={isLeetCodeElite ? 'gold' : 'elevated'} halo={isLeetCodeElite}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <p className="text-[var(--text-ghost)] text-xs uppercase tracking-[0.1em] mb-1">
+                Career Progress
+              </p>
+              <div className="flex items-baseline gap-4">
+                <div>
+                  <ZenNumber 
+                    value={activeGoals.length} 
+                    className="text-4xl"
+                  />
+                  <p className="text-[var(--text-ghost)] text-xs">Active goals</p>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="bg-slate-50 rounded-2xl p-8 text-center">
-            <p className="text-4xl mb-3">🎯</p>
-            <p className="text-slate-500">No active career goals</p>
+                <div>
+                  <ZenNumber 
+                    value={completedGoals.length} 
+                    className="text-4xl"
+                    gold={completedGoals.length > 0}
+                  />
+                  <p className="text-[var(--text-ghost)] text-xs">Completed</p>
+                </div>
+                <div>
+                  <ZenNumber 
+                    value={totalLeetCode} 
+                    className="text-4xl"
+                    gold={isLeetCodeElite}
+                  />
+                  <p className="text-[var(--text-ghost)] text-xs">LeetCode</p>
+                </div>
+              </div>
+            </div>
+
             <Link
               href="/dashboard/goals"
-              className="text-violet-600 hover:underline text-sm mt-2 inline-block"
+              className="flex items-center gap-2 px-6 py-3 bg-[var(--gold-primary)] text-[var(--obsidian-deepest)] rounded-2xl font-medium hover:opacity-90 transition-opacity"
             >
-              Set your first goal →
+              Manage Goals
+              <ArrowRight size={18} />
             </Link>
           </div>
-        )}
-      </FeatureSection>
+        </ZenCard>
+      </ZenFade>
 
-      {/* Certifications Tracker */}
-      <FeatureSection title="Certifications">
-        <ComingSoon
-          feature="Certification Tracker"
-          description="Track your certification progress, study plans, and exam dates."
-        />
-      </FeatureSection>
+      {/* LAYER 1: Daily Actions */}
+      <DailyActionsLayer
+        actions={layer1Actions}
+        onActionToggle={handleActionToggle}
+      />
 
-      {/* Skills Development */}
-      <FeatureSection title="Skills Development">
-        <ComingSoon
-          feature="Skills Matrix"
-          description="Map and track your technical and soft skills development journey."
-        />
-      </FeatureSection>
+      {/* LAYER 2: Weekly Rhythm */}
+      <WeeklyRhythmLayer rhythms={layer2Rhythms} />
 
-      {/* AI Career Advisor */}
-      <FeatureSection title="AI Career Advisor">
-        <ComingSoon
-          feature="AI Career Coach"
-          description="Get personalized career advice, job market insights, and growth recommendations."
-        />
-      </FeatureSection>
+      {/* LAYER 3: Active Programs */}
+      <ActiveProgramsLayer programs={layer3Programs} />
+
+      {/* LAYER 4: Long-Term Vision (collapsed by default) */}
+      <LongTermVisionLayer goals={layer4Goals} defaultCollapsed={true} />
     </DomainDashboard>
   );
 }
-

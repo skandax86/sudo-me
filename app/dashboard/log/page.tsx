@@ -3,25 +3,273 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ArrowLeft,
+  Sun,
+  Droplets,
+  Brain,
+  CalendarCheck,
+  Smartphone,
+  Dumbbell,
+  BookOpen,
+  Code,
+  Moon,
+  Heart,
+  Check,
+  ChevronDown,
+  Loader2,
+  Snowflake,
+  Clock,
+  Target,
+  Flame
+} from 'lucide-react';
 import { isSupabaseReady, getSupabaseClient } from '@/lib/supabase/client';
 import { calculateDisciplineScore } from '@/lib/calculations';
+import { ZenCard, ZenFade, ZenNumber, ZenProgress, ZenMilestone } from '@/components/zen';
+
+// ============================================================================
+// TYPES & CONSTANTS
+// ============================================================================
+
+interface HabitItem {
+  id: string;
+  label: string;
+  icon: typeof Sun;
+  state: boolean;
+  setter: (value: boolean) => void;
+}
+
+const workoutOptions = [
+  { value: 'Rest', label: 'Rest Day' },
+  { value: 'Gym', label: 'Gym' },
+  { value: 'Run', label: 'Running' },
+  { value: 'Calisthenics', label: 'Calisthenics' },
+  { value: 'Swim', label: 'Swimming' },
+  { value: 'Yoga', label: 'Yoga' },
+  { value: 'Cardio', label: 'Cardio' },
+];
+
+// ============================================================================
+// ZEN HABIT TOGGLE - Save on toggle
+// ============================================================================
+
+interface ZenHabitToggleProps {
+  label: string;
+  icon: typeof Sun;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  gold?: boolean;
+}
+
+function ZenHabitToggle({ label, icon: Icon, checked, onChange, gold = false }: ZenHabitToggleProps) {
+  return (
+    <motion.button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`
+        w-full flex items-center gap-4 p-4 rounded-[20px] border transition-all duration-500
+        ${checked 
+          ? gold
+            ? 'bg-[var(--gold-soft)] border-[var(--gold-primary)]/30'
+            : 'bg-[var(--status-success)]/10 border-[var(--status-success)]/30' 
+          : 'bg-[var(--surface-card)] border-[var(--border-subtle)] hover:border-[var(--border-medium)]'
+        }
+      `}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      {/* Icon */}
+      <motion.div
+        className={`
+          w-10 h-10 rounded-full flex items-center justify-center
+          ${checked 
+            ? gold 
+              ? 'bg-[var(--gold-medium)]' 
+              : 'bg-[var(--status-success)]/20' 
+            : 'bg-[var(--surface-2)]'
+          }
+        `}
+        animate={checked ? { scale: [1, 1.1, 1] } : {}}
+        transition={{ duration: 0.3 }}
+      >
+        <Icon 
+          size={20} 
+          strokeWidth={1.5}
+          className={checked ? (gold ? 'text-[var(--gold-primary)]' : 'text-[var(--status-success)]') : 'text-[var(--text-muted)]'} 
+        />
+      </motion.div>
+
+      {/* Label */}
+      <span className={`flex-1 text-left font-medium ${checked ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
+        {label}
+      </span>
+
+      {/* Checkmark */}
+      <motion.div
+        className={`
+          w-6 h-6 rounded-full border-2 flex items-center justify-center
+          ${checked 
+            ? gold 
+              ? 'bg-[var(--gold-primary)] border-[var(--gold-primary)]' 
+              : 'bg-[var(--status-success)] border-[var(--status-success)]' 
+            : 'border-[var(--border-medium)] bg-transparent'
+          }
+        `}
+      >
+        <AnimatePresence>
+          {checked && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            >
+              <Check size={14} className="text-[var(--obsidian-deepest)]" strokeWidth={3} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.button>
+  );
+}
+
+// ============================================================================
+// ZEN NUMBER INPUT
+// ============================================================================
+
+interface ZenNumberInputProps {
+  label: string;
+  icon: typeof Sun;
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  suffix?: string;
+}
+
+function ZenNumberInput({ label, icon: Icon, value, onChange, min = 0, max = 100, step = 1, suffix = '' }: ZenNumberInputProps) {
+  return (
+    <div className="flex items-center gap-4 p-4 rounded-[20px] bg-[var(--surface-card)] border border-[var(--border-subtle)]">
+      <div className="w-10 h-10 rounded-full bg-[var(--surface-2)] flex items-center justify-center">
+        <Icon size={20} strokeWidth={1.5} className="text-[var(--text-muted)]" />
+      </div>
+      <span className="flex-1 text-[var(--text-muted)] font-medium">{label}</span>
+      <div className="flex items-center gap-2">
+        <motion.button
+          type="button"
+          onClick={() => onChange(Math.max(min, value - step))}
+          className="w-8 h-8 rounded-full bg-[var(--surface-2)] flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+          whileTap={{ scale: 0.9 }}
+        >
+          −
+        </motion.button>
+        <span className="w-16 text-center text-[var(--text-primary)] font-medium">
+          {value}{suffix}
+        </span>
+        <motion.button
+          type="button"
+          onClick={() => onChange(Math.min(max, value + step))}
+          className="w-8 h-8 rounded-full bg-[var(--surface-2)] flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+          whileTap={{ scale: 0.9 }}
+        >
+          +
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// ZEN SELECT
+// ============================================================================
+
+interface ZenSelectProps {
+  label: string;
+  icon: typeof Sun;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+}
+
+function ZenSelect({ label, icon: Icon, value, onChange, options }: ZenSelectProps) {
+  return (
+    <div className="flex items-center gap-4 p-4 rounded-[20px] bg-[var(--surface-card)] border border-[var(--border-subtle)]">
+      <div className="w-10 h-10 rounded-full bg-[var(--surface-2)] flex items-center justify-center">
+        <Icon size={20} strokeWidth={1.5} className="text-[var(--text-muted)]" />
+      </div>
+      <span className="flex-1 text-[var(--text-muted)] font-medium">{label}</span>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="appearance-none bg-[var(--surface-2)] text-[var(--text-primary)] px-4 py-2 pr-8 rounded-xl border border-[var(--border-subtle)] focus:outline-none focus:border-[var(--gold-primary)] cursor-pointer"
+        >
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={16} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-ghost)] pointer-events-none" />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// SECTION HEADER COMPONENT
+// ============================================================================
+
+interface SectionHeaderProps {
+  icon: typeof Sun;
+  title: string;
+  subtitle?: string;
+}
+
+function SectionHeader({ icon: Icon, title, subtitle }: SectionHeaderProps) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-8 h-8 rounded-lg bg-[var(--surface-2)] flex items-center justify-center">
+        <Icon size={16} strokeWidth={1.5} className="text-[var(--gold-primary)]" />
+      </div>
+      <div>
+        <h2 className="text-[var(--text-primary)] font-medium text-base">
+          {title}
+        </h2>
+        {subtitle && (
+          <p className="text-[var(--text-ghost)] text-xs">{subtitle}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// MAIN PAGE
+// ============================================================================
 
 export default function DailyLogPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [showMilestone, setShowMilestone] = useState(false);
 
-  // Habits
+  // Morning Habits
   const [wokeUp6am, setWokeUp6am] = useState(false);
   const [coldShower, setColdShower] = useState(false);
   const [noPhoneFirstHour, setNoPhoneFirstHour] = useState(false);
   const [meditated, setMeditated] = useState(false);
+  
+  // Evening Habit
   const [plannedTomorrow, setPlannedTomorrow] = useState(false);
 
   // Fitness
   const [workoutType, setWorkoutType] = useState<string>('Rest');
   const [waterIntake, setWaterIntake] = useState(0);
+  
+  // Recovery
   const [sleepHours, setSleepHours] = useState(7);
 
   // Learning
@@ -32,6 +280,20 @@ export default function DailyLogPage() {
   // Journal
   const [impulseRating, setImpulseRating] = useState(3);
   const [notes, setNotes] = useState('');
+
+  // Calculated discipline score
+  const disciplineScore = calculateDisciplineScore({
+    wokeUp6am,
+    coldShower,
+    noPhoneFirstHour,
+    meditated,
+    plannedTomorrow,
+  });
+
+  const isGold = disciplineScore >= 90;
+  const morningHabitsCompleted = [wokeUp6am, coldShower, noPhoneFirstHour, meditated].filter(Boolean).length;
+  const eveningHabitsCompleted = [plannedTomorrow].filter(Boolean).length;
+  const totalHabitsCompleted = morningHabitsCompleted + eveningHabitsCompleted;
 
   useEffect(() => {
     if (!isSupabaseReady()) {
@@ -84,7 +346,6 @@ export default function DailyLogPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess(false);
 
     try {
       const supabase = getSupabaseClient();
@@ -96,14 +357,6 @@ export default function DailyLogPage() {
       }
 
       const today = new Date().toISOString().split('T')[0];
-      
-      const disciplineScore = calculateDisciplineScore({
-        wokeUp6am,
-        coldShower,
-        noPhoneFirstHour,
-        meditated,
-        plannedTomorrow,
-      });
 
       const logData = {
         user_id: user.id,
@@ -130,269 +383,353 @@ export default function DailyLogPage() {
 
       if (upsertError) throw upsertError;
 
-      if (wokeUp6am && coldShower && noPhoneFirstHour && meditated && plannedTomorrow) {
-        await supabase
-          .from('profiles')
-          .update({ 
-            current_streak: supabase.rpc('increment_streak', { user_id: user.id }) 
-          })
-          .eq('id', user.id);
+      // Show milestone if all habits completed
+      if (totalHabitsCompleted === 5) {
+        setShowMilestone(true);
+      } else {
+        router.push('/dashboard');
       }
-
-      setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1500);
-    } catch (err: any) {
-      setError(err.message || 'Failed to save log');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save log';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const inputClasses = "w-full px-4 py-3 bg-white text-gray-900 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all placeholder-slate-400 font-medium";
-  const selectClasses = "w-full px-4 py-3 bg-white text-gray-900 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all font-medium appearance-none cursor-pointer";
-  const labelClasses = "block text-sm font-semibold text-slate-700 mb-2";
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+
+  const morningHabits: HabitItem[] = [
+    { id: 'woke', label: 'Woke up at 6 AM', icon: Sun, state: wokeUp6am, setter: setWokeUp6am },
+    { id: 'cold', label: 'Cold shower', icon: Snowflake, state: coldShower, setter: setColdShower },
+    { id: 'phone', label: 'No phone first hour', icon: Smartphone, state: noPhoneFirstHour, setter: setNoPhoneFirstHour },
+    { id: 'meditate', label: 'Meditated', icon: Brain, state: meditated, setter: setMeditated },
+  ];
+
+  const eveningHabits: HabitItem[] = [
+    { id: 'plan', label: 'Planned tomorrow', icon: CalendarCheck, state: plannedTomorrow, setter: setPlannedTomorrow },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50 to-indigo-50">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+    <div className="min-h-screen bg-[var(--background)]">
+      {/* Milestone Modal */}
+      <ZenMilestone
+        isOpen={showMilestone}
+        onClose={() => router.push('/dashboard')}
+        title="Day Complete"
+        subtitle="All habits accomplished. Rest well."
+      />
+
+      {/* Header - Minimal */}
+      <motion.header 
+        className="sticky top-0 z-10 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--border-subtle)]"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/dashboard">
+            <motion.div 
+              className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              whileHover={{ x: -4 }}
+            >
+              <ArrowLeft size={20} strokeWidth={1.5} />
+              <span className="text-sm font-medium">Back</span>
+            </motion.div>
+          </Link>
+          <p className="text-[var(--text-ghost)] text-sm tracking-wide">{dateStr}</p>
+        </div>
+      </motion.header>
+
+      <div className="max-w-2xl mx-auto px-6 py-8">
+        {/* Title */}
+        <ZenFade>
+          <div className="mb-8">
+            <h1 className="text-3xl font-light text-[var(--text-primary)] tracking-tight mb-2">
               Daily Log
             </h1>
-            <p className="text-sm text-slate-500">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            </p>
+            <p className="text-[var(--text-ghost)]">Close today&apos;s chapter with intention.</p>
           </div>
-          <Link 
-            href="/dashboard" 
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-all"
-          >
-            ← Back
-          </Link>
-        </div>
-      </div>
+        </ZenFade>
 
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        {error && (
-          <div className="bg-red-50 border-2 border-red-200 text-red-700 px-5 py-4 rounded-xl mb-6 font-medium">
-            ❌ {error}
-          </div>
-        )}
+        {/* Error */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-6 p-4 rounded-[20px] bg-[var(--status-error)]/10 border border-[var(--status-error)]/30 text-[var(--status-error)]"
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {success && (
-          <div className="bg-emerald-50 border-2 border-emerald-200 text-emerald-700 px-5 py-4 rounded-xl mb-6 font-medium">
-            ✅ Log saved successfully! Redirecting...
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Habits Section */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <div className="flex items-center gap-3 mb-5">
-              <span className="text-2xl">🌅</span>
-              <h2 className="text-xl font-bold text-slate-800">Morning Habits</h2>
-            </div>
-            <div className="space-y-3">
-              {[
-                { state: wokeUp6am, setter: setWokeUp6am, label: 'Woke up at 6 AM', icon: '⏰' },
-                { state: coldShower, setter: setColdShower, label: 'Cold shower', icon: '🚿' },
-                { state: noPhoneFirstHour, setter: setNoPhoneFirstHour, label: 'No phone first hour', icon: '📵' },
-                { state: meditated, setter: setMeditated, label: 'Meditated (10+ mins)', icon: '🧘' },
-                { state: plannedTomorrow, setter: setPlannedTomorrow, label: 'Planned tomorrow', icon: '📋' },
-              ].map((habit, idx) => (
-                <label 
-                  key={idx}
-                  className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all ${
-                    habit.state 
-                      ? 'bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-300' 
-                      : 'bg-slate-50 border-2 border-slate-100 hover:border-slate-200'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={habit.state}
-                    onChange={(e) => habit.setter(e.target.checked)}
-                    className="w-6 h-6 rounded-lg border-2 border-slate-300 text-emerald-500 focus:ring-emerald-500 focus:ring-2"
-                  />
-                  <span className="text-xl">{habit.icon}</span>
-                  <span className={`font-medium ${habit.state ? 'text-emerald-700' : 'text-slate-700'}`}>
-                    {habit.label}
-                  </span>
-                  {habit.state && <span className="ml-auto text-emerald-500 font-bold">✓</span>}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Fitness Section */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <div className="flex items-center gap-3 mb-5">
-              <span className="text-2xl">💪</span>
-              <h2 className="text-xl font-bold text-slate-800">Fitness</h2>
-            </div>
-            <div className="space-y-5">
-              <div>
-                <label className={labelClasses}>Workout Type</label>
-                <div className="relative">
-                  <select
-                    value={workoutType}
-                    onChange={(e) => setWorkoutType(e.target.value)}
-                    className={selectClasses}
-                  >
-                    <option value="Gym">🏋️ Gym</option>
-                    <option value="Run">🏃 Run</option>
-                    <option value="Calisthenics">🤸 Calisthenics</option>
-                    <option value="Swim">🏊 Swim</option>
-                    <option value="Rest">😴 Rest Day</option>
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    ▼
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* ============================================================ */}
+          {/* DISCIPLINE SCORE PREVIEW */}
+          {/* ============================================================ */}
+          <ZenFade delay={0.1}>
+            <ZenCard variant={isGold ? 'gold' : 'default'} halo={isGold}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-[var(--text-ghost)] text-xs uppercase tracking-[0.1em] mb-1">
+                    Discipline Score
+                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <ZenNumber value={disciplineScore} gold={isGold} className="text-4xl" />
+                    {isGold && (
+                      <span className="text-[var(--gold-primary)] text-sm font-medium">Elite</span>
+                    )}
                   </div>
                 </div>
-              </div>
-              
-              <div>
-                <label className={labelClasses}>
-                  Water Intake (oz) 
-                  <span className="text-violet-500 ml-2">Target: 128</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={waterIntake}
-                    onChange={(e) => setWaterIntake(Number(e.target.value))}
-                    min="0"
-                    max="200"
-                    className={inputClasses}
-                    placeholder="0"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">💧</span>
-                </div>
-                <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 transition-all"
-                    style={{ width: `${Math.min((waterIntake / 128) * 100, 100)}%` }}
-                  />
+                <div className="text-right">
+                  <p className="text-[var(--text-ghost)] text-xs mb-1">Habits</p>
+                  <p className="text-[var(--text-primary)] text-lg font-light">{totalHabitsCompleted}/5</p>
                 </div>
               </div>
+              <ZenProgress value={(totalHabitsCompleted / 5) * 100} gold={isGold} />
+            </ZenCard>
+          </ZenFade>
 
-              <div>
-                <label className={labelClasses}>
-                  Sleep Hours
-                  <span className="text-violet-500 ml-2">Target: 7-8</span>
-                </label>
-                <input
-                  type="number"
+          {/* ============================================================ */}
+          {/* MORNING ROUTINE */}
+          {/* ============================================================ */}
+          <ZenFade delay={0.2}>
+            <div>
+              <SectionHeader 
+                icon={Sun} 
+                title="Morning Routine" 
+                subtitle="Start your day right" 
+              />
+              <div className="space-y-3">
+                {morningHabits.map((habit, idx) => (
+                  <motion.div
+                    key={habit.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + idx * 0.05 }}
+                  >
+                    <ZenHabitToggle
+                      label={habit.label}
+                      icon={habit.icon}
+                      checked={habit.state}
+                      onChange={habit.setter}
+                      gold={isGold}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </ZenFade>
+
+          {/* ============================================================ */}
+          {/* EVENING ROUTINE */}
+          {/* ============================================================ */}
+          <ZenFade delay={0.3}>
+            <div>
+              <SectionHeader 
+                icon={Moon} 
+                title="Evening Routine" 
+                subtitle="Prepare for tomorrow" 
+              />
+              <div className="space-y-3">
+                {eveningHabits.map((habit, idx) => (
+                  <motion.div
+                    key={habit.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 + idx * 0.05 }}
+                  >
+                    <ZenHabitToggle
+                      label={habit.label}
+                      icon={habit.icon}
+                      checked={habit.state}
+                      onChange={habit.setter}
+                      gold={isGold}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </ZenFade>
+
+          {/* ============================================================ */}
+          {/* FITNESS */}
+          {/* ============================================================ */}
+          <ZenFade delay={0.4}>
+            <div>
+              <SectionHeader 
+                icon={Dumbbell} 
+                title="Fitness" 
+                subtitle="Track your workout and hydration" 
+              />
+              <div className="space-y-3">
+                <ZenSelect
+                  label="Workout Type"
+                  icon={Flame}
+                  value={workoutType}
+                  onChange={setWorkoutType}
+                  options={workoutOptions}
+                />
+                <ZenNumberInput
+                  label="Water Intake"
+                  icon={Droplets}
+                  value={waterIntake}
+                  onChange={setWaterIntake}
+                  max={200}
+                  step={8}
+                  suffix=" oz"
+                />
+              </div>
+            </div>
+          </ZenFade>
+
+          {/* ============================================================ */}
+          {/* RECOVERY */}
+          {/* ============================================================ */}
+          <ZenFade delay={0.45}>
+            <div>
+              <SectionHeader 
+                icon={Clock} 
+                title="Recovery" 
+                subtitle="Rest is part of the process" 
+              />
+              <div className="space-y-3">
+                <ZenNumberInput
+                  label="Hours Slept"
+                  icon={Moon}
                   value={sleepHours}
-                  onChange={(e) => setSleepHours(Number(e.target.value))}
-                  min="0"
-                  max="12"
-                  step="0.5"
-                  className={inputClasses}
-                  placeholder="7"
+                  onChange={setSleepHours}
+                  min={0}
+                  max={12}
+                  step={0.5}
+                  suffix=" hrs"
                 />
               </div>
             </div>
-          </div>
+          </ZenFade>
 
-          {/* Learning Section */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <div className="flex items-center gap-3 mb-5">
-              <span className="text-2xl">📚</span>
-              <h2 className="text-xl font-bold text-slate-800">Learning</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className={labelClasses}>LeetCode 💻</label>
-                <input
-                  type="number"
+          {/* ============================================================ */}
+          {/* LEARNING */}
+          {/* ============================================================ */}
+          <ZenFade delay={0.5}>
+            <div>
+              <SectionHeader 
+                icon={BookOpen} 
+                title="Learning" 
+                subtitle="Grow your mind daily" 
+              />
+              <div className="space-y-3">
+                <ZenNumberInput
+                  label="LeetCode Problems"
+                  icon={Code}
                   value={leetcodeSolved}
-                  onChange={(e) => setLeetcodeSolved(Number(e.target.value))}
-                  min="0"
-                  className={inputClasses}
-                  placeholder="0"
+                  onChange={setLeetcodeSolved}
+                  max={20}
                 />
-              </div>
-              <div>
-                <label className={labelClasses}>Pages Read 📖</label>
-                <input
-                  type="number"
+                <ZenNumberInput
+                  label="Pages Read"
+                  icon={BookOpen}
                   value={pagesRead}
-                  onChange={(e) => setPagesRead(Number(e.target.value))}
-                  min="0"
-                  className={inputClasses}
-                  placeholder="0"
+                  onChange={setPagesRead}
+                  max={100}
+                  step={5}
                 />
-              </div>
-              <div>
-                <label className={labelClasses}>Study Hours ⏱️</label>
-                <input
-                  type="number"
+                <ZenNumberInput
+                  label="Study Hours"
+                  icon={Brain}
                   value={studyHours}
-                  onChange={(e) => setStudyHours(Number(e.target.value))}
-                  min="0"
-                  step="0.5"
-                  className={inputClasses}
-                  placeholder="0"
+                  onChange={setStudyHours}
+                  max={12}
+                  step={0.5}
+                  suffix=" hrs"
                 />
               </div>
             </div>
-          </div>
+          </ZenFade>
 
-          {/* Journal Section */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <div className="flex items-center gap-3 mb-5">
-              <span className="text-2xl">📝</span>
-              <h2 className="text-xl font-bold text-slate-800">Journal</h2>
-            </div>
-            <div className="space-y-5">
-              <div>
-                <label className={labelClasses}>Impulse Control Rating</label>
-                <div className="flex gap-3">
-                  {[1, 2, 3, 4, 5].map((rating) => (
-                    <button
-                      key={rating}
-                      type="button"
-                      onClick={() => setImpulseRating(rating)}
-                      className={`flex-1 py-4 rounded-xl font-bold text-lg transition-all ${
-                        impulseRating === rating
-                          ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet-200 scale-105'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      {rating}
-                    </button>
-                  ))}
+          {/* ============================================================ */}
+          {/* REFLECTION */}
+          {/* ============================================================ */}
+          <ZenFade delay={0.6}>
+            <div>
+              <SectionHeader 
+                icon={Heart} 
+                title="Reflection" 
+                subtitle="End with gratitude" 
+              />
+              <div className="space-y-4">
+                {/* Impulse Control */}
+                <div className="p-4 rounded-[20px] bg-[var(--surface-card)] border border-[var(--border-subtle)]">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-[var(--surface-2)] flex items-center justify-center">
+                      <Target size={20} strokeWidth={1.5} className="text-[var(--text-muted)]" />
+                    </div>
+                    <span className="text-[var(--text-muted)] font-medium">Impulse Control</span>
+                    <span className="ml-auto text-[var(--text-primary)] font-medium">{impulseRating}/5</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <motion.button
+                        key={num}
+                        type="button"
+                        onClick={() => setImpulseRating(num)}
+                        className={`
+                          flex-1 h-2 rounded-full transition-colors
+                          ${num <= impulseRating ? 'bg-[var(--gold-primary)]' : 'bg-[var(--surface-2)]'}
+                        `}
+                        whileTap={{ scale: 0.95 }}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex justify-between text-xs text-slate-400 mt-2 px-1">
-                  <span>Poor</span>
-                  <span>Excellent</span>
+
+                {/* Notes */}
+                <div className="p-4 rounded-[20px] bg-[var(--surface-card)] border border-[var(--border-subtle)]">
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="One line about today..."
+                    className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-ghost)] resize-none focus:outline-none"
+                    rows={2}
+                  />
                 </div>
               </div>
-              
-              <div>
-                <label className={labelClasses}>Notes / Reflection</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={4}
-                  className={`${inputClasses} resize-none`}
-                  placeholder="How was your day? Any challenges or wins? What did you learn?"
-                />
-              </div>
             </div>
-          </div>
+          </ZenFade>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-4 rounded-2xl font-bold text-lg hover:from-violet-700 hover:to-indigo-700 transition-all disabled:opacity-50 shadow-lg shadow-violet-200 hover:shadow-xl hover:shadow-violet-300"
-          >
-            {loading ? '💾 Saving...' : '✨ Save Today\'s Log'}
-          </button>
+          {/* ============================================================ */}
+          {/* SUBMIT BUTTON - "Close Day" */}
+          {/* ============================================================ */}
+          <ZenFade delay={0.7}>
+            <motion.button
+              type="submit"
+              disabled={loading}
+              className={`
+                w-full py-4 rounded-[20px] font-medium text-lg transition-all
+                ${isGold 
+                  ? 'bg-[var(--gold-primary)] text-[var(--obsidian-deepest)]' 
+                  : 'bg-[var(--text-primary)] text-[var(--background)]'
+                }
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {loading ? (
+                <Loader2 className="w-6 h-6 mx-auto animate-spin" />
+              ) : (
+                <>Close Day ✓</>
+              )}
+            </motion.button>
+          </ZenFade>
         </form>
       </div>
     </div>

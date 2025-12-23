@@ -86,10 +86,10 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-violet-50 to-indigo-50">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
         <div className="text-center">
-          <div className="text-5xl mb-4 animate-bounce">🚀</div>
-          <p className="text-slate-600 font-medium">Loading dashboard...</p>
+          <div className="w-8 h-8 border-2 border-[var(--gold-primary)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[var(--text-muted)]">Loading...</p>
         </div>
       </div>
     );

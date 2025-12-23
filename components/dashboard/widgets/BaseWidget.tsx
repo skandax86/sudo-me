@@ -2,6 +2,9 @@
 
 import { ReactNode, Suspense } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { ArrowRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ZenCard, ZenFade, ZenNumber, ZenProgress } from '@/components/zen';
 
 // ============================================================================
 // WIDGET TYPES
@@ -42,9 +45,9 @@ const sizeClasses: Record<WidgetSize, string> = {
 function WidgetSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="h-4 bg-slate-200 rounded w-3/4 mb-3" />
-      <div className="h-4 bg-slate-200 rounded w-1/2 mb-3" />
-      <div className="h-16 bg-slate-200 rounded" />
+      <div className="h-4 bg-[var(--surface-2)] rounded w-3/4 mb-3" />
+      <div className="h-4 bg-[var(--surface-2)] rounded w-1/2 mb-3" />
+      <div className="h-16 bg-[var(--surface-2)] rounded" />
     </div>
   );
 }
@@ -64,13 +67,14 @@ function EmptyState({ icon = '📭', message = 'No data yet', actionHref, action
   return (
     <div className="text-center py-8">
       <div className="text-4xl mb-3">{icon}</div>
-      <p className="text-slate-500 text-sm">{message}</p>
+      <p className="text-[var(--text-muted)] text-sm">{message}</p>
       {actionHref && actionLabel && (
         <Link
           href={actionHref}
-          className="inline-block mt-3 text-violet-600 hover:underline text-sm font-medium"
+          className="inline-flex items-center gap-1 mt-3 text-[var(--gold-primary)] hover:opacity-80 text-sm font-medium transition-opacity"
         >
-          {actionLabel} →
+          {actionLabel}
+          <ArrowRight size={14} />
         </Link>
       )}
     </div>
@@ -96,23 +100,22 @@ export function BaseWidget({
   headerRight,
 }: BaseWidgetProps) {
   return (
-    <div
-      className={`bg-white rounded-2xl p-6 shadow-sm border border-slate-100 ${sizeClasses[size]} ${className}`}
-    >
+    <ZenCard className={`p-6 ${sizeClasses[size]} ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           {icon && <span className="text-xl">{icon}</span>}
-          <h3 className="font-bold text-slate-800">{title}</h3>
+          <h3 className="font-medium text-[var(--text-primary)]">{title}</h3>
         </div>
         <div className="flex items-center gap-2">
           {headerRight}
           {actionHref && actionLabel && (
             <Link
               href={actionHref}
-              className="text-violet-600 text-sm font-medium hover:underline"
+              className="text-[var(--gold-primary)] text-sm font-medium hover:opacity-80 transition-opacity flex items-center gap-1"
             >
               {actionLabel}
+              <ArrowRight size={14} />
             </Link>
           )}
         </div>
@@ -133,7 +136,7 @@ export function BaseWidget({
           children
         )}
       </Suspense>
-    </div>
+    </ZenCard>
   );
 }
 
@@ -149,19 +152,14 @@ export interface MetricWidgetProps {
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
   color?: 'default' | 'success' | 'warning' | 'danger';
+  isElite?: boolean;
 }
 
 const colorClasses = {
-  default: 'text-slate-800',
-  success: 'text-emerald-600',
-  warning: 'text-amber-600',
-  danger: 'text-red-600',
-};
-
-const trendClasses = {
-  up: 'text-emerald-600',
-  down: 'text-red-600',
-  neutral: 'text-slate-500',
+  default: 'text-[var(--text-primary)]',
+  success: 'text-[var(--status-success)]',
+  warning: 'text-[var(--status-warning)]',
+  danger: 'text-[var(--status-error)]',
 };
 
 export function MetricWidget({
@@ -172,28 +170,35 @@ export function MetricWidget({
   trend,
   trendValue,
   color = 'default',
+  isElite = false,
 }: MetricWidgetProps) {
+  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
+  
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <ZenCard className="p-5" isElite={isElite}>
       <div className="flex items-center gap-3 mb-3">
-        <span className="text-2xl">{icon}</span>
-        <h3 className="text-slate-500 text-sm font-medium uppercase tracking-wide">{title}</h3>
+        <span className={`text-2xl ${isElite ? 'drop-shadow-[0_0_8px_rgba(198,169,106,0.4)]' : ''}`}>{icon}</span>
+        <h3 className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider">{title}</h3>
       </div>
       <div className="flex items-end justify-between">
         <div>
-          <p className={`text-4xl font-bold ${colorClasses[color]}`}>{value}</p>
-          {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
+          <p className={`text-3xl font-light ${colorClasses[color]} ${isElite ? 'text-[var(--gold-primary)]' : ''}`}>
+            {typeof value === 'number' ? <ZenNumber value={value} isElite={isElite} /> : value}
+          </p>
+          {subtitle && <p className="text-sm text-[var(--text-muted)] mt-1">{subtitle}</p>}
         </div>
         {trend && trendValue && (
-          <div className={`flex items-center gap-1 text-sm font-medium ${trendClasses[trend]}`}>
-            {trend === 'up' && '↑'}
-            {trend === 'down' && '↓'}
-            {trend === 'neutral' && '→'}
+          <div className={`flex items-center gap-1 text-sm font-medium ${
+            trend === 'up' ? 'text-[var(--status-success)]' : 
+            trend === 'down' ? 'text-[var(--status-error)]' : 
+            'text-[var(--text-muted)]'
+          }`}>
+            <TrendIcon size={14} />
             {trendValue}
           </div>
         )}
       </div>
-    </div>
+    </ZenCard>
   );
 }
 
@@ -205,18 +210,22 @@ export interface ActionWidgetProps {
   label: string;
   icon: string;
   href: string;
-  gradient: string;
-  shadowColor: string;
+  gradient?: string;
 }
 
-export function ActionWidget({ label, icon, href, gradient, shadowColor }: ActionWidgetProps) {
+export function ActionWidget({ label, icon, href, gradient }: ActionWidgetProps) {
   return (
-    <Link
-      href={href}
-      className={`bg-gradient-to-r ${gradient} text-white rounded-2xl p-6 text-center hover:opacity-90 transition shadow-lg ${shadowColor}`}
-    >
-      <span className="text-3xl block mb-2">{icon}</span>
-      <span className="font-bold">{label}</span>
+    <Link href={href}>
+      <motion.div
+        className={`rounded-[20px] p-6 text-center text-white transition-all ${
+          gradient || 'bg-gradient-to-br from-[var(--gold-primary)] to-[var(--gold-soft)]'
+        }`}
+        whileHover={{ scale: 1.02, y: -2 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <span className="text-3xl block mb-2">{icon}</span>
+        <span className="font-medium text-sm">{label}</span>
+      </motion.div>
     </Link>
   );
 }
@@ -232,6 +241,7 @@ export interface ProgressWidgetProps {
   unit?: string;
   icon?: string;
   color?: string;
+  isElite?: boolean;
 }
 
 export function ProgressWidget({
@@ -240,27 +250,23 @@ export function ProgressWidget({
   target,
   unit = '',
   icon,
-  color = 'violet',
+  color,
+  isElite = false,
 }: ProgressWidgetProps) {
   const percentage = Math.min((current / target) * 100, 100);
   
   return (
-    <div className="p-4 bg-slate-50 rounded-xl">
-      <div className="flex items-center justify-between mb-2">
+    <div className="p-4 bg-[var(--surface-2)] rounded-[16px]">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          {icon && <span>{icon}</span>}
-          <span className="text-slate-700 font-medium">{title}</span>
+          {icon && <span className={isElite ? 'drop-shadow-[0_0_6px_rgba(198,169,106,0.4)]' : ''}>{icon}</span>}
+          <span className="text-[var(--text-primary)] font-medium text-sm">{title}</span>
         </div>
-        <span className="text-slate-500 text-sm">
+        <span className="text-[var(--text-muted)] text-sm">
           {current}{unit} / {target}{unit}
         </span>
       </div>
-      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-        <div
-          className={`h-full bg-${color}-500 rounded-full transition-all duration-500`}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
+      <ZenProgress value={percentage} isElite={isElite} />
     </div>
   );
 }
@@ -289,7 +295,7 @@ export function ListWidget({ items, emptyMessage = 'No items', maxItems = 5 }: L
 
   if (displayItems.length === 0) {
     return (
-      <div className="text-center py-6 text-slate-400">
+      <div className="text-center py-6 text-[var(--text-muted)]">
         <p>{emptyMessage}</p>
       </div>
     );
@@ -297,29 +303,40 @@ export function ListWidget({ items, emptyMessage = 'No items', maxItems = 5 }: L
 
   return (
     <div className="space-y-2">
-      {displayItems.map((item) => (
-        <div
+      {displayItems.map((item, index) => (
+        <motion.div
           key={item.id}
-          className={`flex items-center gap-3 p-3 rounded-xl ${
-            item.isComplete ? 'bg-emerald-50' : 'bg-slate-50'
+          className={`flex items-center gap-3 p-3 rounded-[12px] ${
+            item.isComplete ? 'bg-[var(--status-success)]/10' : 'bg-[var(--surface-2)]'
           }`}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.05 }}
         >
           {item.icon && <span className="text-xl">{item.icon}</span>}
           <div className="flex-1 min-w-0">
-            <p className={`font-medium truncate ${
-              item.isComplete ? 'text-emerald-700' : 'text-slate-700'
+            <p className={`font-medium truncate text-sm ${
+              item.isComplete ? 'text-[var(--status-success)]' : 'text-[var(--text-primary)]'
             }`}>
               {item.title}
             </p>
             {item.subtitle && (
-              <p className="text-xs text-slate-500 truncate">{item.subtitle}</p>
+              <p className="text-xs text-[var(--text-muted)] truncate">{item.subtitle}</p>
             )}
           </div>
           {item.rightContent}
-          {item.isComplete && <span className="text-emerald-500 font-bold">✓</span>}
-        </div>
+          {item.isComplete && (
+            <motion.span 
+              className="text-[var(--status-success)] font-bold"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', delay: 0.2 }}
+            >
+              ✓
+            </motion.span>
+          )}
+        </motion.div>
       ))}
     </div>
   );
 }
-

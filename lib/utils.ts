@@ -14,8 +14,10 @@ export function getCurrentPhase(daysElapsed: number): string {
 }
 
 // Calculate days elapsed from start date
-export function getDaysElapsed(startDate: Date | string): number {
+export function getDaysElapsed(startDate: Date | string | null | undefined): number {
+  if (!startDate) return 1;
   const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+  if (isNaN(start.getTime())) return 1;
   return Math.max(1, Math.floor(
     (Date.now() - start.getTime()) / (1000 * 60 * 60 * 24)
   ) + 1);

@@ -46,7 +46,7 @@ export default function PortfolioPage() {
         .from('transactions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('category', 'Investments');
+        .eq('category', 'investments');
 
       const totalInvested = transactions
         ? transactions.reduce((sum: number, t: { amount: number }) => sum + Number(t.amount), 0)

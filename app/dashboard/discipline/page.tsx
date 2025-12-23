@@ -1,29 +1,128 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { 
+  Flame, 
+  Shield, 
+  Target, 
+  CheckCircle2,
+  Calendar,
+  TrendingUp,
+  Sparkles,
+  Brain,
+  Clock,
+  Phone,
+  Snowflake,
+  BookOpen
+} from 'lucide-react';
 import { isSupabaseReady, getSupabaseClient } from '@/lib/supabase/client';
 import { getDomainConfig } from '@/lib/domains';
-import { DomainDashboard, FeatureSection, EmptyDomainState, ComingSoon } from '@/components/dashboard/DomainDashboard';
-import { BaseWidget, MetricWidget, ListWidget } from '@/components/dashboard/widgets/BaseWidget';
-import { DailyLog, GeneratedPlan } from '@/types/database';
+import { DomainDashboard, EmptyDomainState } from '@/components/dashboard/DomainDashboard';
+import { ZenCard, ZenFade, ZenNumber, ZenProgress } from '@/components/zen';
+import { 
+  DailyActionsLayer, 
+  WeeklyRhythmLayer, 
+  LongTermVisionLayer 
+} from '@/components/layers';
+import { Streak, Habit, HabitLog } from '@/types/database';
 
 const domainConfig = getDomainConfig('discipline');
 
 interface DisciplineData {
-  todayLog: DailyLog | null;
-  weekLogs: DailyLog[];
-  plan: GeneratedPlan | null;
-  streak: number;
+  streak: Streak | null;
+  habits: Habit[];
+  todayLogs: HabitLog[];
+  weeklyCompletion: number;
 }
 
-export default function DisciplineDashboard() {
+// ============================================================================
+// STREAK HERO SECTION
+// ============================================================================
+
+function StreakHero({ streak, forgiveness }: { streak: Streak | null; forgiveness: number }) {
+  const currentStreak = streak?.current_streak || 0;
+  const longestStreak = streak?.longest_streak || 0;
+  const isElite = currentStreak >= 21;
+
+  return (
+    <ZenFade>
+      <ZenCard variant={isElite ? 'gold' : 'elevated'} halo={isElite} className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <p className="text-[var(--text-ghost)] text-xs uppercase tracking-[0.1em] mb-2">
+              Current Streak
+            </p>
+            <div className="flex items-baseline gap-2">
+              <ZenNumber 
+                value={currentStreak} 
+                className="text-6xl" 
+                gold={isElite}
+              />
+              <span className="text-[var(--text-muted)] text-xl">days</span>
+            </div>
+            <p className="text-[var(--text-secondary)] mt-2">
+              {currentStreak >= 90 && '🏆 Transformation master!'}
+              {currentStreak >= 30 && currentStreak < 90 && '👑 Monthly champion!'}
+              {currentStreak >= 21 && currentStreak < 30 && '⚡ Habits automatic!'}
+              {currentStreak >= 14 && currentStreak < 21 && '💪 Two weeks strong!'}
+              {currentStreak >= 7 && currentStreak < 14 && '🔥 Week warrior!'}
+              {currentStreak >= 3 && currentStreak < 7 && '✨ Building momentum!'}
+              {currentStreak >= 1 && currentStreak < 3 && '🌱 Every day counts!'}
+              {currentStreak === 0 && 'Start your streak today!'}
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div className="flex gap-8">
+            <div className="text-center">
+              <p className="text-3xl font-light text-[var(--text-primary)]">{longestStreak}</p>
+              <p className="text-[var(--text-ghost)] text-xs">Longest</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-light text-[var(--text-primary)]">{forgiveness}/2</p>
+              <p className="text-[var(--text-ghost)] text-xs">Protected</p>
+            </div>
+            <div className="text-center">
+              <Flame size={28} className={isElite ? 'text-[var(--gold-primary)]' : 'text-[var(--text-muted)]'} />
+              <p className="text-[var(--text-ghost)] text-xs mt-1">Active</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Streak Protection Info */}
+        {forgiveness > 0 && (
+          <div className="mt-6 p-4 rounded-2xl bg-[var(--surface-2)] flex items-center gap-3">
+            <Shield size={18} className="text-[var(--gold-primary)]" />
+            <p className="text-[var(--text-secondary)] text-sm">
+              <strong>Streak Protection:</strong> {forgiveness} forgiveness day{forgiveness > 1 ? 's' : ''} left this month.
+            </p>
+          </div>
+        )}
+      </ZenCard>
+    </ZenFade>
+  );
+}
+
+// ============================================================================
+// MAIN PAGE
+// ============================================================================
+
+export default function DisciplinePage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DisciplineData | null>(null);
+  const [dailyActions, setDailyActions] = useState<Record<string, boolean>>({});
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
+    // Reset state on mount
+    setLoading(true);
+    setData(null);
+    setDailyActions({});
+    
     async function fetchData() {
       if (!isSupabaseReady()) {
         router.push('/setup');
@@ -39,37 +138,41 @@ export default function DisciplineDashboard() {
           return;
         }
 
-        // Fetch profile for plan and streak
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('generated_plan, current_streak')
-          .eq('id', user.id)
-          .single();
-
-        // Fetch today's log
         const today = new Date().toISOString().split('T')[0];
-        const { data: todayLog } = await supabase
-          .from('daily_logs')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('log_date', today)
-          .single();
 
-        // Fetch week's logs
+        // Fetch streak, habits, and today's habit logs
+        const [{ data: streak }, { data: habits }, { data: habitLogs }] = await Promise.all([
+          supabase.from('streaks').select('*').eq('user_id', user.id).maybeSingle(),
+          supabase.from('habits').select('*').eq('user_id', user.id).eq('active', true).order('sort_order'),
+          supabase.from('habit_logs').select('*').eq('user_id', user.id).eq('log_date', today),
+        ]);
+
+        // Build daily actions state from logs
+        const logMap: Record<string, boolean> = {};
+        habitLogs?.forEach((log: HabitLog) => {
+          logMap[log.habit_id] = log.completed;
+        });
+
+        setDailyActions(logMap);
+
+        // Calculate weekly completion
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         const { data: weekLogs } = await supabase
-          .from('daily_logs')
-          .select('*')
+          .from('habit_logs')
+          .select('completed')
           .eq('user_id', user.id)
-          .gte('log_date', weekAgo.toISOString().split('T')[0])
-          .order('log_date', { ascending: false });
+          .gte('log_date', weekAgo.toISOString().split('T')[0]);
+
+        const totalLogs = weekLogs?.length || 0;
+        const completedLogs = weekLogs?.filter((l: { completed: boolean }) => l.completed).length || 0;
+        const weeklyCompletion = totalLogs > 0 ? Math.round((completedLogs / totalLogs) * 100) : 0;
 
         setData({
-          todayLog,
-          weekLogs: weekLogs || [],
-          plan: profile?.generated_plan || null,
-          streak: profile?.current_streak || 0,
+          streak,
+          habits: habits || [],
+          todayLogs: habitLogs || [],
+          weeklyCompletion,
         });
       } catch (error) {
         console.error('Error fetching discipline data:', error);
@@ -79,18 +182,14 @@ export default function DisciplineDashboard() {
     }
 
     fetchData();
-  }, [router]);
+  }, [pathname]);
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="p-8 bg-[var(--background)] min-h-screen">
         <div className="animate-pulse">
-          <div className="h-40 bg-slate-200 rounded-2xl mb-6" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-slate-200 rounded-2xl" />
-            ))}
-          </div>
+          <div className="h-48 bg-[var(--surface-card)] rounded-[28px] mb-6" />
+          <div className="h-60 bg-[var(--surface-card)] rounded-[28px] mb-6" />
         </div>
       </div>
     );
@@ -101,208 +200,166 @@ export default function DisciplineDashboard() {
       <DomainDashboard config={domainConfig}>
         <EmptyDomainState
           config={domainConfig}
-          actionLabel="Start Tracking Habits"
-          actionHref="/dashboard/log"
+          actionLabel="Start Building Habits"
+          actionHref="/dashboard/settings"
         />
       </DomainDashboard>
     );
   }
 
-  const { todayLog, weekLogs, plan, streak } = data;
+  const { streak, habits, weeklyCompletion } = data;
+  const forgiveness = 2 - (streak?.forgiveness_used_this_month || 0);
 
-  // Calculate habit completion
-  const habits = [
-    { id: 'wake', label: 'Wake up at 6 AM', icon: '⏰', done: todayLog?.woke_up_at_6am || false },
-    { id: 'shower', label: 'Cold shower', icon: '🚿', done: todayLog?.cold_shower || false },
-    { id: 'phone', label: 'No phone first hour', icon: '📵', done: todayLog?.no_phone_first_hour || false },
-    { id: 'meditate', label: 'Meditated', icon: '🧘', done: todayLog?.meditated || false },
-    { id: 'plan', label: 'Planned tomorrow', icon: '📋', done: todayLog?.planned_tomorrow || false },
+  // ============================================================================
+  // LAYER 1: DAILY ACTIONS
+  // "What do I do TODAY?"
+  // ============================================================================
+  const habitIcons: Record<string, typeof Clock> = {
+    'wake': Clock,
+    'shower': Snowflake,
+    'phone': Phone,
+    'meditate': Brain,
+    'plan': Target,
+    'workout': TrendingUp,
+    'read': BookOpen,
+  };
+
+  const layer1Actions = habits.slice(0, 7).map(habit => ({
+    id: habit.id,
+    label: habit.name,
+    icon: (() => {
+      const Icon = habitIcons[habit.icon || ''] || CheckCircle2;
+      return <Icon size={18} className="text-[var(--text-muted)]" />;
+    })(),
+    completed: dailyActions[habit.id] || false,
+  }));
+
+  // Handler for toggling daily actions
+  const handleActionToggle = async (id: string) => {
+    const newValue = !dailyActions[id];
+    setDailyActions(prev => ({ ...prev, [id]: newValue }));
+    
+    // Save to database
+    try {
+      const supabase = getSupabaseClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      
+      await supabase
+        .from('habit_logs')
+        .upsert({
+          user_id: user.id,
+          habit_id: id,
+          log_date: today,
+          completed: newValue,
+        }, { onConflict: 'habit_id,log_date' });
+    } catch (error) {
+      console.error('Error saving habit log:', error);
+    }
+  };
+
+  // ============================================================================
+  // LAYER 2: WEEKLY RHYTHM
+  // "What am I building THIS WEEK?"
+  // ============================================================================
+  const layer2Rhythms = [
+    { 
+      id: 'completion', 
+      label: 'Habit Completion', 
+      icon: '✅',
+      current: weeklyCompletion, 
+      target: 100, 
+      unit: '%',
+      frequency: 'Weekly target'
+    },
+    { 
+      id: 'streak', 
+      label: 'Streak Days', 
+      icon: '🔥',
+      current: Math.min(streak?.current_streak || 0, 7), 
+      target: 7, 
+      unit: 'days',
+      frequency: 'This week'
+    },
   ];
 
-  const completedToday = habits.filter(h => h.done).length;
-  const avgScore = weekLogs.length > 0
-    ? Math.round(weekLogs.reduce((sum, log) => sum + (log.discipline_score || 0), 0) / weekLogs.length)
-    : 0;
-
-  // Get custom habits from plan
-  const planHabits = plan?.dailyHabits || [];
+  // ============================================================================
+  // LAYER 4: LONG-TERM VISION
+  // "Why am I doing all this?"
+  // ============================================================================
+  const layer4Goals = [
+    {
+      id: 'consistency',
+      title: 'Build unbreakable consistency',
+      icon: '💎',
+      timeframe: 'short' as const,
+      domain: 'Discipline',
+      progress: Math.min(weeklyCompletion, 100),
+    },
+    {
+      id: 'automation',
+      title: 'Make habits automatic (21+ day streak)',
+      icon: '⚡',
+      timeframe: 'short' as const,
+      domain: 'Behavior',
+      progress: Math.min(((streak?.current_streak || 0) / 21) * 100, 100),
+    },
+    {
+      id: 'transformation',
+      title: '90-day transformation',
+      icon: '🦋',
+      timeframe: 'mid' as const,
+      domain: 'Life Design',
+      progress: Math.min(((streak?.current_streak || 0) / 90) * 100, 100),
+    },
+    {
+      id: 'identity',
+      title: 'Become the person who always follows through',
+      icon: '🏆',
+      timeframe: 'long' as const,
+      domain: 'Identity',
+    },
+  ];
 
   return (
-    <DomainDashboard
-      config={domainConfig}
-      streak={streak}
-      todayProgress={{ current: completedToday, total: 5 }}
-    >
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <MetricWidget
-          title="Today's Score"
-          value={`${todayLog?.discipline_score || 0}%`}
-          icon="🎯"
-          subtitle={todayLog ? 'Logged' : 'Not logged'}
-          color={todayLog?.discipline_score && todayLog.discipline_score >= 80 ? 'success' : 'default'}
-        />
-        <MetricWidget
-          title="Week Average"
-          value={`${avgScore}%`}
-          icon="📊"
-          subtitle="Last 7 days"
-        />
-        <MetricWidget
-          title="Streak"
-          value={streak}
-          icon="🔥"
-          subtitle="Days in a row"
-          color={streak >= 7 ? 'success' : 'default'}
-        />
-        <MetricWidget
-          title="Habits Done"
-          value={`${completedToday}/5`}
-          icon="✅"
-          subtitle="Today"
-        />
+    <DomainDashboard config={domainConfig}>
+      {/* Streak Hero */}
+      <StreakHero streak={streak} forgiveness={forgiveness} />
+
+      {/* LAYER 1: Daily Actions */}
+      <DailyActionsLayer
+        actions={layer1Actions}
+        onActionToggle={handleActionToggle}
+      />
+
+      {/* LAYER 2: Weekly Rhythm */}
+      <WeeklyRhythmLayer rhythms={layer2Rhythms} />
+
+      {/* LAYER 4: Long-Term Vision (collapsed by default) */}
+      <LongTermVisionLayer goals={layer4Goals} defaultCollapsed={true} />
+
+      {/* Motivational Quote */}
+      <ZenFade delay={0.4}>
+        <ZenCard className="text-center">
+          <Sparkles size={24} className="text-[var(--gold-primary)] mx-auto mb-4" />
+          <p className="text-[var(--text-secondary)] text-lg italic">
+            "Discipline is the bridge between goals and accomplishment."
+          </p>
+          <p className="text-[var(--text-ghost)] text-sm mt-2">— Jim Rohn</p>
+        </ZenCard>
+      </ZenFade>
+
+      {/* Manage Habits Link */}
+      <div className="mt-8 text-center">
+        <Link
+          href="/dashboard/settings"
+          className="text-[var(--text-muted)] hover:text-[var(--gold-primary)] text-sm transition-colors"
+        >
+          ⚙️ Manage your habits →
+        </Link>
       </div>
-
-      {/* Today's Habits */}
-      <FeatureSection title="Today's Habits" actionHref="/dashboard/log" actionLabel="Log">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Core Habits */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-100">
-            <h3 className="font-bold text-slate-700 mb-4">Core Habits</h3>
-            <div className="space-y-3">
-              {habits.map((habit) => (
-                <div
-                  key={habit.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl ${
-                    habit.done ? 'bg-emerald-50' : 'bg-slate-50'
-                  }`}
-                >
-                  <span className="text-xl">{habit.icon}</span>
-                  <span className={`flex-1 ${habit.done ? 'text-emerald-700' : 'text-slate-600'}`}>
-                    {habit.label}
-                  </span>
-                  {habit.done && <span className="text-emerald-500 font-bold">✓</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Custom Habits from Plan */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-100">
-            <h3 className="font-bold text-slate-700 mb-4">Your Plan Habits</h3>
-            {planHabits.length > 0 ? (
-              <div className="space-y-3">
-                {planHabits.slice(0, 5).map((habit: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-purple-50"
-                  >
-                    <span className="text-xl">{habit.icon || '🎯'}</span>
-                    <div className="flex-1">
-                      <p className="text-purple-700 font-medium">{habit.name}</p>
-                      <p className="text-xs text-purple-500">{habit.target}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-slate-400">
-                <p>No custom habits set</p>
-                <Link href="/onboarding/edit-plan" className="text-violet-600 hover:underline text-sm">
-                  Edit your plan →
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </FeatureSection>
-
-      {/* Weekly Progress */}
-      <FeatureSection title="Weekly Discipline Score">
-        <div className="bg-white rounded-2xl p-6 border border-slate-100">
-          <div className="flex items-end justify-between gap-2 h-40">
-            {weekLogs.length > 0 ? (
-              weekLogs.slice(0, 7).reverse().map((log, idx) => {
-                const score = log.discipline_score || 0;
-                const height = `${(score / 100) * 100}%`;
-                const date = new Date(log.log_date);
-                const dayName = date.toLocaleDateString('en', { weekday: 'short' });
-
-                return (
-                  <div key={log.id} className="flex-1 flex flex-col items-center gap-2">
-                    <div className="w-full h-32 flex items-end">
-                      <div
-                        className={`w-full rounded-t-lg transition-all ${
-                          score >= 80
-                            ? 'bg-emerald-500'
-                            : score >= 50
-                            ? 'bg-amber-500'
-                            : 'bg-red-400'
-                        }`}
-                        style={{ height }}
-                      />
-                    </div>
-                    <span className="text-xs text-slate-500">{dayName}</span>
-                    <span className="text-sm font-medium text-slate-700">{score}%</span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-slate-400">
-                No data for this week
-              </div>
-            )}
-          </div>
-        </div>
-      </FeatureSection>
-
-      {/* Routines */}
-      {plan?.morningRoutine && plan.morningRoutine.length > 0 && (
-        <FeatureSection title="Morning Routine">
-          <div className="bg-white rounded-2xl p-6 border border-slate-100">
-            <div className="space-y-3">
-              {plan.morningRoutine.map((item: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl"
-                >
-                  <span className="text-xl">{item.icon || '🌅'}</span>
-                  <span className="flex-1 text-amber-700">{item.activity}</span>
-                  <span className="text-sm text-amber-500">{item.duration}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </FeatureSection>
-      )}
-
-      {plan?.eveningRoutine && plan.eveningRoutine.length > 0 && (
-        <FeatureSection title="Evening Routine">
-          <div className="bg-white rounded-2xl p-6 border border-slate-100">
-            <div className="space-y-3">
-              {plan.eveningRoutine.map((item: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-3 p-3 bg-indigo-50 rounded-xl"
-                >
-                  <span className="text-xl">{item.icon || '🌙'}</span>
-                  <span className="flex-1 text-indigo-700">{item.activity}</span>
-                  <span className="text-sm text-indigo-500">{item.duration}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </FeatureSection>
-      )}
-
-      {/* AI Accountability Placeholder */}
-      <FeatureSection title="AI Accountability Coach">
-        <ComingSoon
-          feature="AI Accountability Partner"
-          description="Get daily motivation, pattern analysis, and personalized tips to build better habits."
-        />
-      </FeatureSection>
     </DomainDashboard>
   );
 }
-
