@@ -1,4 +1,19 @@
-    // Database types for Supabase/PostgreSQL
+// Database types for Supabase/PostgreSQL
+// Updated for MVP schema
+
+// ============================================
+// CORE TYPES
+// ============================================
+
+export type Domain = 'health' | 'finance' | 'learning' | 'discipline' | 'career' | 'personal';
+export type TransactionType = 'income' | 'expense' | 'transfer';
+export type AccountType = 'bank' | 'cash' | 'wallet' | 'credit';
+export type WorkoutType = 'gym' | 'cardio' | 'yoga' | 'swim' | 'rest' | 'calisthenics';
+export type GymProgram = 'push' | 'pull' | 'legs' | 'full' | 'upper' | 'lower';
+
+// ============================================
+// USER & PROFILE
+// ============================================
 
 export interface Profile {
   id: string;
@@ -12,6 +27,7 @@ export interface Profile {
   current_streak: number;
   total_xp: number;
   level: string;
+  timezone: string;
   // Onboarding & Personalization
   onboarding_complete: boolean;
   preferences: UserPreferences | null;
@@ -21,33 +37,20 @@ export interface Profile {
 }
 
 export interface UserPreferences {
-  // Primary Focus
   primaryFocus: string;
-  
-  // Goals
   specificGoals: string[];
   customGoals: string[];
-  
-  // Current Situation
   currentLevel: string;
   biggestChallenge: string;
-  
-  // Commitment
   hoursPerDay: number;
   daysPerWeek: number;
   planDuration: number;
-  
-  // Schedule
   wakeUpTime: string;
   sleepTime: string;
   workSchedule: string;
   age: number;
-  
-  // Tracking
   trackingAreas: string[];
   customTracking: string[];
-  
-  // Budget
   monthlyBudget: number;
 }
 
@@ -89,29 +92,62 @@ export interface GeneratedPlan {
   sleepTime: string;
 }
 
-export interface DailyLog {
+// ============================================
+// USER DOMAINS
+// ============================================
+
+export interface UserDomain {
   id: string;
   user_id: string;
-  log_date: string;
-  // Habits
-  woke_up_at_6am: boolean;
-  cold_shower: boolean;
-  no_phone_first_hour: boolean;
-  meditated: boolean;
-  planned_tomorrow: boolean;
-  // Fitness
-  workout_type: 'Gym' | 'Run' | 'Calisthenics' | 'Swim' | 'Rest' | null;
-  water_intake_oz: number;
-  sleep_hours: number | null;
-  // Learning
-  leetcode_solved: number;
-  pages_read: number;
-  study_hours: number;
-  // Journal
-  impulse_control_rating: 1 | 2 | 3 | 4 | 5 | null;
-  notes: string | null;
-  // Calculated
-  discipline_score: number;
+  domain: Domain;
+  active: boolean;
+  created_at: string;
+}
+
+// ============================================
+// HABITS (Flexible, user-defined)
+// ============================================
+
+export interface Habit {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string;
+  weight: number;
+  domain: Domain;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HabitLog {
+  id: string;
+  habit_id: string;
+  user_id: string;
+  date: string;
+  completed: boolean;
+  created_at: string;
+}
+
+// With joined habit data
+export interface HabitWithLog extends Habit {
+  log?: HabitLog;
+}
+
+// ============================================
+// FINANCE
+// ============================================
+
+export interface Account {
+  id: string;
+  user_id: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  opening_balance: number;
+  current_balance: number;
+  is_default: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -119,29 +155,37 @@ export interface DailyLog {
 export interface Transaction {
   id: string;
   user_id: string;
+  datetime: string;
+  type: TransactionType;
+  account_id: string | null;
   amount: number;
-  type: 'Income' | 'Expense';
-  category: 'Essentials' | 'Wants' | 'Investments' | 'Savings' | 'Goals';
+  amount_inr: number;
+  category: string;
+  subcategory: string | null;
   description: string | null;
   transaction_date: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface Goal {
+// For API input
+export interface TransactionInput {
+  datetime: string;
+  type: TransactionType;
+  account_id: string;
+  amount: number;
+  category: string;
+  subcategory?: string;
+  note?: string;
+}
+
+export interface CategoryBudget {
   id: string;
   user_id: string;
-  title: string;
-  description: string | null;
-  timeframe: 'short' | 'mid' | 'long';
-  category: 'Finance' | 'Fitness' | 'Career' | 'Learning' | 'Personal' | 'Travel';
-  target_value: number | null;
-  current_value: number;
-  unit: string | null;
-  status: 'active' | 'completed' | 'cancelled';
-  due_date: string | null;
+  month: string; // YYYY-MM-01
+  category: string;
+  limit_amount: number;
   created_at: string;
-  updated_at: string;
 }
 
 export interface Budget {
@@ -170,32 +214,204 @@ export interface InvestmentPortfolio {
   updated_at: string;
 }
 
+// ============================================
+// FITNESS / HEALTH
+// ============================================
+
 export interface Workout {
   id: string;
   user_id: string;
   workout_date: string;
-  workout_type: 'Gym' | 'Run' | 'Calisthenics' | 'Swim' | 'Rest';
+  workout_type: WorkoutType;
+  program: GymProgram | null;
   duration_mins: number | null;
-  // Gym specific
-  exercises: Array<{
-    name: string;
-    sets: number;
-    reps: number;
-    weight: number;
-  }> | null;
-  // Running specific
+  calories: number | null;
+  effort: number | null; // 1-10
+  started_at: string | null;
+  ended_at: string | null;
+  // Legacy fields
+  exercises: ExerciseData[] | null;
   distance_km: number | null;
   pace_min_per_km: number | null;
-  // Calisthenics specific
   pull_ups: number | null;
   push_ups: number | null;
   l_sit_seconds: number | null;
-  // General
   notes: string | null;
   goal_progress: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export interface ExerciseData {
+  name: string;
+  sets: number;
+  reps: number;
+  weight: number;
+}
+
+export interface ExerciseLog {
+  id: string;
+  workout_id: string;
+  exercise: string;
+  sets: number | null;
+  reps: number | null;
+  weight: number | null;
+  unit: string;
+  duration_sec: number | null;
+  distance_m: number | null;
+  notes: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+// For API input
+export interface WorkoutInput {
+  date: string;
+  workout_type: WorkoutType;
+  program?: GymProgram;
+  duration_min?: number;
+  effort?: number;
+  exercises?: Array<{
+    exercise: string;
+    sets: number;
+    reps: number;
+    weight: number;
+  }>;
+}
+
+// With exercises included
+export interface WorkoutWithExercises extends Workout {
+  exercise_logs?: ExerciseLog[];
+}
+
+// ============================================
+// LEARNING
+// ============================================
+
+export interface LearningLog {
+  id: string;
+  user_id: string;
+  date: string;
+  leetcode_solved: number;
+  pages_read: number;
+  study_hours: number;
+  topic: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LearningLogInput {
+  date: string;
+  leetcode_solved?: number;
+  study_hours?: number;
+  pages_read?: number;
+  topic?: string;
+  note?: string;
+}
+
+// ============================================
+// DISCIPLINE
+// ============================================
+
+export interface DisciplineScore {
+  id: string;
+  user_id: string;
+  date: string;
+  habits_score: number;
+  fitness_score: number;
+  learning_score: number;
+  finance_score: number;
+  total_score: number;
+  habits_data: {
+    completed: number;
+    total: number;
+  } | null;
+  created_at: string;
+}
+
+export interface Streak {
+  id: string;
+  user_id: string;
+  current_streak: number;
+  longest_streak: number;
+  last_log_date: string | null;
+  forgiveness_used_this_month: number;
+  streak_started_at: string | null;
+  updated_at: string;
+}
+
+// ============================================
+// PERSONAL / REFLECTION
+// ============================================
+
+export interface DailyReflection {
+  id: string;
+  user_id: string;
+  date: string;
+  impulse_rating: number | null; // 1-5
+  energy_level: number | null; // 1-5
+  mood: number | null; // 1-5
+  gratitude: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================
+// LEGACY: DAILY LOGS (for backwards compat)
+// ============================================
+
+export interface DailyLog {
+  id: string;
+  user_id: string;
+  log_date: string;
+  // Habits
+  woke_up_at_6am: boolean;
+  cold_shower: boolean;
+  no_phone_first_hour: boolean;
+  meditated: boolean;
+  planned_tomorrow: boolean;
+  // Fitness
+  workout_type: 'Gym' | 'Run' | 'Calisthenics' | 'Swim' | 'Rest' | null;
+  water_intake_oz: number;
+  sleep_hours: number | null;
+  // Learning
+  leetcode_solved: number;
+  pages_read: number;
+  study_hours: number;
+  // Journal
+  impulse_control_rating: 1 | 2 | 3 | 4 | 5 | null;
+  notes: string | null;
+  // Calculated
+  discipline_score: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================
+// GOALS
+// ============================================
+
+export interface Goal {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  timeframe: 'short' | 'mid' | 'long';
+  category: 'Finance' | 'Fitness' | 'Career' | 'Learning' | 'Personal' | 'Travel';
+  target_value: number | null;
+  current_value: number;
+  unit: string | null;
+  status: 'active' | 'completed' | 'cancelled';
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================
+// WEEKLY SCORECARDS
+// ============================================
 
 export interface WeeklyScorecard {
   id: string;
@@ -217,6 +433,10 @@ export interface WeeklyScorecard {
   updated_at: string;
 }
 
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
 export interface Notification {
   id: string;
   user_id: string;
@@ -227,7 +447,47 @@ export interface Notification {
   created_at: string;
 }
 
-// Database type for Supabase client
+// ============================================
+// API RESPONSE TYPES
+// ============================================
+
+export interface DashboardSummary {
+  day: number;
+  discipline_score: number;
+  streak: number;
+  domains: {
+    health?: { today_done: number; total: number };
+    finance?: { spent_today: number; budget_status: 'green' | 'yellow' | 'red' };
+    learning?: { study_hours: number; leetcode: number };
+    discipline?: { habits_done: number; total: number };
+  };
+  wins: DailyWin[];
+  xp: { current: number; level: string; progress: number };
+}
+
+export interface DailyWin {
+  id: string;
+  icon: string;
+  message: string;
+  category: 'habit' | 'fitness' | 'finance' | 'learning' | 'streak';
+}
+
+export interface FinanceOverview {
+  balance: number;
+  spent_this_month: number;
+  budget_health: 'green' | 'yellow' | 'red';
+  accounts: Array<{
+    id: string;
+    name: string;
+    balance: number;
+  }>;
+  spending_by_category: Record<string, number>;
+}
+
+// ============================================
+// DATABASE TYPE FOR SUPABASE CLIENT
+// ============================================
+
 export interface Database {
   public: {
     Tables: {
@@ -236,35 +496,85 @@ export interface Database {
         Insert: Omit<Profile, 'created_at' | 'updated_at'>;
         Update: Partial<Omit<Profile, 'id' | 'created_at'>>;
       };
-      daily_logs: {
-        Row: DailyLog;
-        Insert: Omit<DailyLog, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<DailyLog, 'id' | 'user_id' | 'created_at'>>;
+      user_domains: {
+        Row: UserDomain;
+        Insert: Omit<UserDomain, 'id' | 'created_at'>;
+        Update: Partial<Omit<UserDomain, 'id' | 'user_id' | 'created_at'>>;
+      };
+      habits: {
+        Row: Habit;
+        Insert: Omit<Habit, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Habit, 'id' | 'user_id' | 'created_at'>>;
+      };
+      habit_logs: {
+        Row: HabitLog;
+        Insert: Omit<HabitLog, 'id' | 'created_at'>;
+        Update: Partial<Omit<HabitLog, 'id' | 'habit_id' | 'created_at'>>;
+      };
+      accounts: {
+        Row: Account;
+        Insert: Omit<Account, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Account, 'id' | 'user_id' | 'created_at'>>;
       };
       transactions: {
         Row: Transaction;
         Insert: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<Transaction, 'id' | 'user_id' | 'created_at'>>;
       };
-      goals: {
-        Row: Goal;
-        Insert: Omit<Goal, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Goal, 'id' | 'user_id' | 'created_at'>>;
+      category_budgets: {
+        Row: CategoryBudget;
+        Insert: Omit<CategoryBudget, 'id' | 'created_at'>;
+        Update: Partial<Omit<CategoryBudget, 'id' | 'user_id' | 'created_at'>>;
       };
       budgets: {
         Row: Budget;
         Insert: Omit<Budget, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<Budget, 'id' | 'user_id' | 'created_at'>>;
       };
-      investment_portfolio: {
-        Row: InvestmentPortfolio;
-        Insert: Omit<InvestmentPortfolio, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<InvestmentPortfolio, 'id' | 'user_id' | 'created_at'>>;
-      };
       workouts: {
         Row: Workout;
         Insert: Omit<Workout, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<Workout, 'id' | 'user_id' | 'created_at'>>;
+      };
+      exercise_logs: {
+        Row: ExerciseLog;
+        Insert: Omit<ExerciseLog, 'id' | 'created_at'>;
+        Update: Partial<Omit<ExerciseLog, 'id' | 'workout_id' | 'created_at'>>;
+      };
+      learning_logs: {
+        Row: LearningLog;
+        Insert: Omit<LearningLog, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<LearningLog, 'id' | 'user_id' | 'created_at'>>;
+      };
+      daily_reflections: {
+        Row: DailyReflection;
+        Insert: Omit<DailyReflection, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<DailyReflection, 'id' | 'user_id' | 'created_at'>>;
+      };
+      discipline_scores: {
+        Row: DisciplineScore;
+        Insert: Omit<DisciplineScore, 'id' | 'created_at'>;
+        Update: Partial<Omit<DisciplineScore, 'id' | 'user_id' | 'created_at'>>;
+      };
+      streaks: {
+        Row: Streak;
+        Insert: Omit<Streak, 'id' | 'updated_at'>;
+        Update: Partial<Omit<Streak, 'id' | 'user_id'>>;
+      };
+      daily_logs: {
+        Row: DailyLog;
+        Insert: Omit<DailyLog, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<DailyLog, 'id' | 'user_id' | 'created_at'>>;
+      };
+      goals: {
+        Row: Goal;
+        Insert: Omit<Goal, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Goal, 'id' | 'user_id' | 'created_at'>>;
+      };
+      investment_portfolio: {
+        Row: InvestmentPortfolio;
+        Insert: Omit<InvestmentPortfolio, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<InvestmentPortfolio, 'id' | 'user_id' | 'created_at'>>;
       };
       weekly_scorecards: {
         Row: WeeklyScorecard;

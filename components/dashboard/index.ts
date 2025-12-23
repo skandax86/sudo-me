@@ -26,6 +26,33 @@ export {
   ListWidget,
 } from './widgets/BaseWidget';
 
+// Gamification & Engagement
+export {
+  WinsSection,
+  CelebrationModal,
+  ProgressComparisonCard,
+  LevelCard,
+  StreakProtection,
+} from './WinsSection';
+
+export {
+  WeeklyReview,
+  WeekReviewTrigger,
+} from './WeeklyReview';
+
+export type { WeekData } from './WeeklyReview';
+
+// Quick Actions
+export {
+  QuickLogBar,
+  QuickWorkoutButtons,
+  QuickExpenseModal,
+  FloatingLogButton,
+  HabitToggleRow,
+} from './QuickLog';
+
+export type { QuickAction } from './QuickLog';
+
 // Types
 export type {
   BaseWidgetProps,
